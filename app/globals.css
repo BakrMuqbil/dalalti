@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/*
+ * ============================================
+ * دلالتي — نظام التصميم (Design Tokens)
+ * طابع: أنيق وراقي — فخامة هادئة، ألوان دافئة مطفأة
+ * ============================================
+ */
+:root {
+  /* الخلفيات */
+  --color-background: #faf7f2;
+  --color-surface: #ffffff;
+
+  /* النصوص */
+  --color-ink: #2b2420;
+  --color-ink-soft: #6b5f54;
+
+  /* الهوية */
+  --color-brand: #7a5c3e;
+  --color-brand-deep: #5e4530;
+  --color-gold: #b8862e;
+  --color-gold-soft: #e4cfa0;
+
+  /* الحدود */
+  --color-line: #e8e0d3;
+
+  /* الحالات */
+  --color-success: #5c7a5c;
+  --color-success-bg: #eaf0e8;
+  --color-danger: #a64b4b;
+  --color-danger-bg: #f5e8e6;
+  --color-warning: #b8862e;
+  --color-warning-bg: #f6ecd9;
+
+  /* واتساب (لون منفصل مقصود عن باقي النظام) */
+  --color-whatsapp: #3f6b4f;
+  --color-whatsapp-deep: #335a41;
+}
+
+@theme inline {
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-brand: var(--color-brand);
+  --color-brand-deep: var(--color-brand-deep);
+  --color-gold: var(--color-gold);
+  --color-gold-soft: var(--color-gold-soft);
+  --color-line: var(--color-line);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-whatsapp: var(--color-whatsapp);
+  --color-whatsapp-deep: var(--color-whatsapp-deep);
+
+  --font-display: var(--font-plex-arabic);
+  --font-body: var(--font-plex-arabic);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-ink);
+}
