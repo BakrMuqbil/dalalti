@@ -14,8 +14,6 @@ export default function StoreCategoriesPage() {
     imageFile,
     imagePreviewUrl,
     editingId,
-    error,
-    message,
     setName,
     setParentId,
     rootCategories,
@@ -119,18 +117,6 @@ export default function StoreCategoriesPage() {
           تنظيم منتجات متجرك بفئات رئيسية وفرعية مع صورة لكل فئة.
         </p>
       </div>
-
-      {message && (
-        <div className="mb-5 rounded-xl border border-success/20 bg-success-bg px-4 py-3 text-sm font-medium text-success">
-          {message}
-        </div>
-      )}
-
-      {error && (
-        <div className="mb-5 rounded-xl border border-danger/20 bg-danger-bg px-4 py-3 text-sm font-medium text-danger">
-          {error}
-        </div>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <section className="h-fit rounded-3xl border border-line bg-surface p-6">
@@ -255,8 +241,9 @@ export default function StoreCategoriesPage() {
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-sm text-ink-soft">
-              جاري تحميل الفئات...
+            <div className="p-12 text-center">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand" />
+              <p className="text-sm text-ink-soft">جاري تحميل الفئات...</p>
             </div>
           ) : rootCategories.length === 0 ? (
             <div className="p-12 text-center">

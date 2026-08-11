@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { StoreIdentityProvider } from "./components/StoreIdentityContext";
+import { ToastProvider } from "./components/ToastProvider";
 import { StoreHeader } from "./components/StoreHeader";
 
 /**
@@ -79,10 +80,12 @@ export default async function StoreLayout({
 
   return (
     <StoreIdentityProvider value={identity}>
-      <div className="min-h-screen bg-background">
-        <StoreHeader />
-        {children}
-      </div>
+      <ToastProvider>
+        <div className="min-h-screen bg-background">
+          <StoreHeader />
+          {children}
+        </div>
+      </ToastProvider>
     </StoreIdentityProvider>
   );
 }

@@ -14,7 +14,6 @@ export default function SettingsPage() {
         description,
         phone,
         error,
-        message,
         setName,
         setSlug,
         setDescription,
@@ -50,12 +49,6 @@ export default function SettingsPage() {
                 <div className="mb-5 rounded-2xl border border-danger/25 bg-danger-bg px-5 py-4 text-sm font-medium text-danger">
                     {" "}
                     {error}{" "}
-                </div>
-            )}{" "}
-            {message && (
-                <div className="mb-5 rounded-2xl border border-success/25 bg-success-bg px-5 py-4 text-sm font-medium text-success">
-                    {" "}
-                    {message}{" "}
                 </div>
             )}{" "}
             <div className="mb-6 flex items-center gap-3">

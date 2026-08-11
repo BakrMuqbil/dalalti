@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requireAuth();
 
   if (!auth || auth.role !== "STORE_OWNER") {
@@ -35,27 +35,80 @@ export async function GET() {
       );
     }
 
-    const products = await prisma.product.findMany({
-      where: {
-        storeId: store.id,
-      },
-      include: {
-        category: true,
-        images: {
-          orderBy: {
-            sortOrder: "asc",
+    const { searchParams } = new URL(request.url);
+
+    // Search
+    const q = searchParams.get("q")?.trim();
+
+    // Filters
+    const categoryId = searchParams.get("categoryId")?.trim();
+    const availability = searchParams.get("availability");
+    const status = searchParams.get("status");
+
+    // Pagination
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+    const skip = (page - 1) * limit;
+
+    const whereConditions: Array<Record<string, unknown>> = [
+      { storeId: store.id },
+    ];
+
+    if (q) {
+      whereConditions.push({
+        OR: [
+          { name: { contains: q, mode: "insensitive" as const } },
+          { description: { contains: q, mode: "insensitive" as const } },
+        ],
+      });
+    }
+
+    if (categoryId) {
+      whereConditions.push({ categoryId });
+    }
+
+    if (availability === "AVAILABLE" || availability === "UNAVAILABLE") {
+      whereConditions.push({ availability });
+    }
+
+    if (status === "ACTIVE" || status === "INACTIVE") {
+      whereConditions.push({ status });
+    }
+
+    const where = { AND: whereConditions };
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          images: {
+            orderBy: {
+              sortOrder: "asc",
+            },
           },
+          variants: true,
         },
-        variants: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const pages = Math.ceil(total / limit);
 
     return NextResponse.json({
       success: true,
       products,
+      pagination: {
+        total,
+        pages,
+        page,
+        limit,
+      },
     });
   } catch (error) {
     console.error("Get store products error:", error);
