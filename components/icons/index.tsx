@@ -1,9 +1,15 @@
-import React from 'react';
+import type { SVGProps } from "react";
 
 /**
- * أيقونات SVG خفيفة مصممة خصيصاً للوحات التحكم — بدون أي مكتبة خارجية،
- * لتقليل حجم الحزمة وتسريع أول تجميع (مهم لبيئة تطوير محدودة الموارد).
- * كل أيقونة بخط رفيع (stroke-based) بما ينسجم مع طابع "الفخامة الهادئة".
+ * أيقونات SVG خفيفة مصممة خصيصاً للوحة التحكم.
+ * بدون أي مكتبة خارجية.
+ *
+ * جميع الأيقونات:
+ * - تعتمد على currentColor
+ * - قابلة لتغيير الحجم واللون عبر className / CSS
+ * - Stroke-based
+ * - متوافقة مع TypeScript
+ * - مناسبة لواجهة "دلالتي" بطابع الفخامة الهادئة
  */
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -19,10 +25,14 @@ const base = {
   strokeLinejoin: "round" as const,
 };
 
+/* =========================================================
+   General / Products
+   ========================================================= */
+
 export function BoxIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z" />
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
       <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
     </svg>
   );
@@ -37,21 +47,12 @@ export function TagIcon(props: IconProps) {
   );
 }
 
-export function UsersIcon(props: IconProps) {
+export function PackageCheckIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-export function ReceiptIcon(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
-      <path d="M8 8h8M8 12h8M8 16h5" />
+      <path d="M16 16h6M19 13v6" />
+      <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l1.5-.87" />
+      <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
     </svg>
   );
 }
@@ -74,6 +75,37 @@ export function CrownIcon(props: IconProps) {
   );
 }
 
+/* =========================================================
+   Users / Customers
+   ========================================================= */
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Finance / Orders
+   ========================================================= */
+
+export function ReceiptIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Calendar / Time
+   ========================================================= */
+
 export function CalendarIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
@@ -82,6 +114,19 @@ export function CalendarIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Links / Navigation
+   ========================================================= */
 
 export function LinkIcon(props: IconProps) {
   return (
@@ -98,6 +143,100 @@ export function ArrowLeftIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Search / Filter
+   ========================================================= */
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </svg>
+  );
+}
+
+export function FilterIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 5h16" />
+      <path d="M7 12h10" />
+      <path d="M10 19h4" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Actions
+   ========================================================= */
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 15H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
+export function PencilIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+export function XIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Settings
+   ========================================================= */
+
+export function CogIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.5 1.5-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-2.12v-.4a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.5-1.5.06-.06A1.7 1.7 0 0 0 9.16 15a1.7 1.7 0 0 0-1.56-1.03H7.2v-2.12h.4A1.7 1.7 0 0 0 9.16 10a1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.5-1.5.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.12v.4a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.5 1.5-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.04v2.12h-.04A1.7 1.7 0 0 0 19.4 15Z" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Upload / Files
+   ========================================================= */
+
+export function UploadIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 16V4" />
+      <path d="m7 9 5-5 5 5" />
+      <path d="M5 20h14" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   Communication
+   ========================================================= */
 
 export function PhoneIcon(props: IconProps) {
   return (
@@ -116,6 +255,10 @@ export function MailIcon(props: IconProps) {
   );
 }
 
+/* =========================================================
+   Alerts / Analytics
+   ========================================================= */
+
 export function AlertTriangleIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
@@ -128,34 +271,23 @@ export function AlertTriangleIcon(props: IconProps) {
 export function TrendingUpIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <path d="m22 7-8.5 8.5-5-5L2 17M16 7h6v6" />
+      <path d="m22 7-8.5 8.5-5-5L2 17" />
+      <path d="M16 7h6v6" />
     </svg>
   );
 }
 
-export function ClockIcon(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 6v6l4 2" />
-    </svg>
-  );
-}
+/* =========================================================
+   Globe / Language
+   ========================================================= */
 
-export function PackageCheckIcon(props: IconProps) {
+export function GlobeIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <path d="M16 16h6M19 13v6" />
-      <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l1.5-.87" />
-      <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
-    </svg>
-  );
-}
-
-export function ChevronLeftIcon(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="m15 18-6-6 6-6" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18" />
+      <path d="M12 3a14 14 0 0 0 0 18" />
     </svg>
   );
 }

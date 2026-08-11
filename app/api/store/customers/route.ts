@@ -65,7 +65,20 @@ export async function POST(request: Request) {
     const customer = await prisma.customer.create({ data: { storeId: store.id, name, phone, address, notes } });
     return NextResponse.json({ success: true, message: "تم إنشاء العميل بنجاح", customer }, { status: 201 });
   } catch (error) {
-    console.error("Create store customer error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء إنشاء العميل" }, { status: 500 });
-  }
+  console.error("========================================");
+  console.error("CREATE CUSTOMER ERROR");
+  console.error(error);
+  console.error("========================================");
+
+  return NextResponse.json(
+    {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "حدث خطأ أثناء إنشاء العميل",
+    },
+    { status: 500 }
+  );
+}
 }
