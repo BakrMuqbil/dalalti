@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     if (!store) return NextResponse.json({ success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" }, { status: 404 });
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search")?.trim() || "";
+    const search = searchParams.get("q")?.trim() || "";
     const limit = Math.min(Math.max(Number(searchParams.get("limit") || 50), 1), 100);
 
     const customers = await prisma.customer.findMany({
