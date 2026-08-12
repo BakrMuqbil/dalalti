@@ -1,1 +1,284 @@
-'use client' ; import { SearchIcon, TrashIcon, PencilIcon } from '@/components/icons' ; import { Button } from '@/components/ui/Button' ; import { useCustomers } from './hooks/useCustomers' ; function date(value: string) { return new Intl.DateTimeFormat('ar-SA', { day: 'numeric', month: 'short' }).format(new Date(value)) ; } export default function CustomersPage() { const { customers, loading, saving, searchQuery, name, phone, address, notes, editingId, setSearchQuery, setName, setPhone, setAddress, setNotes, handleSubmit, startEditing, handleDelete, resetForm } = useCustomers() ; return ( <div className='mx-auto max-w-7xl px-6 py-8'> <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'> <div> <h1 className='font-display text-2xl font-semibold text-ink'> إدارة العملاء </h1> <p className='mt-1 text-sm text-ink-soft'> إدارة بيانات العملاء ومتابعة طلباتهم. </p> </div> <div className='flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2'> <SearchIcon width={16} height={16} className='text-ink-soft' /> <input type='text' value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder='البحث بالاسم أو الهاتف...' className='bg-transparent text-sm outline-none placeholder:text-ink-soft/70' /> </div> </div> <div className='mb-8 rounded-2xl border border-line bg-surface p-5 shadow-sm'> <h2 className='mb-4 font-display font-semibold text-ink'> {editingId ? 'تعديل بيانات العميل' : 'إضافة عميل جديد'} </h2> <form onSubmit={handleSubmit} className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4' > <label className='block'> <span className='mb-1.5 block text-xs font-medium text-ink-soft'> الاسم </span> <input required value={name} onChange={e => setName(e.target.value)} placeholder='اسم العميل' className='w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold' /> </label> <label className='block'> <span className='mb-1.5 block text-xs font-medium text-ink-soft'> رقم الهاتف </span> <input required value={phone} onChange={e => setPhone(e.target.value)} placeholder='77xxxxxxx' className='w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold' /> </label> <label className='block'> <span className='mb-1.5 block text-xs font-medium text-ink-soft'> العنوان (اختياري) </span> <input value={address} onChange={e => setAddress(e.target.value)} placeholder='عنوان التوصيل' className='w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold' /> </label> <label className='block'> <span className='mb-1.5 block text-xs font-medium text-ink-soft'> ملاحظات (اختياري) </span> <input value={notes} onChange={e => setNotes(e.target.value)} placeholder='ملاحظات خاصة' className='w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold' /> </label> <div className='flex items-end gap-2 sm:col-span-2 lg:col-span-4'> <Button type='submit' disabled={saving}> {saving ? 'جاري الحفظ...' : editingId ? 'تحديث' : 'إضافة عميل'} </Button> {editingId && ( <button type='button' onClick={resetForm} className='rounded-xl border border-line px-4 py-2.5 text-sm text-ink-soft hover:bg-background' > إلغاء </button> )} </div> </form> </div> {loading ? ( <div className='rounded-3xl border border-line bg-surface p-12 text-center'> <div className='mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand' /> <p className='text-sm text-ink-soft'>جاري تحميل العملاء...</p> </div> ) : customers.length === 0 ? ( <div className='rounded-3xl border border-line bg-surface p-12 text-center'> <div className='text-4xl'>👥</div> <p className='mt-3 font-semibold text-ink'>لا يوجد عملاء</p> <p className='mt-2 text-sm text-ink-soft'> {searchQuery ? 'لا توجد نتائج تطابق البحث.' : 'لم يتم إضافة أي عميل حتى الآن.'} </p> </div> ) : ( <div className='overflow-hidden rounded-2xl border border-line bg-surface shadow-sm'> <div className='overflow-x-auto'> <table className='w-full min-w-[600px] text-right'> <thead className='bg-background'> <tr className='border-b border-line'> <th className='px-5 py-3 text-xs font-semibold text-ink-soft'> العميل </th> <th className='px-5 py-3 text-xs font-semibold text-ink-soft'> الهاتف </th> <th className='px-5 py-3 text-xs font-semibold text-ink-soft'> الطلبات </th> <th className='px-5 py-3 text-xs font-semibold text-ink-soft'> التاريخ </th> <th className='px-5 py-3 text-xs font-semibold text-ink-soft'></th> </tr> </thead> <tbody className='divide-y divide-line'> {customers.map(customer => ( <tr key={customer.id} className='hover:bg-background/60' > <td className='px-5 py-4'> <div className='flex items-center gap-3'> <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg font-bold text-success'> {customer.name.trim().charAt(0) || 'ع'} </div> <span className='font-semibold text-ink'> {customer.name} </span> </div> </td> <td className='px-5 py-4 text-sm text-ink-soft' dir='ltr'> {customer.phone} </td> <td className='px-5 py-4 text-sm font-medium text-ink'> {customer._count?.orders ?? 0} </td> <td className='px-5 py-4 text-xs text-ink-soft'> {date(customer.createdAt)} </td> <td className='px-5 py-4'> <div className='flex items-center gap-2'> <button type='button' onClick={() => startEditing(customer)} className='rounded-lg border border-line p-2 text-ink-soft hover:border-gold hover:text-ink' title='تعديل' > <PencilIcon width={14} height={14} /> </button> <button type='button' onClick={() => handleDelete(customer)} className='rounded-lg border border-line p-2 text-ink-soft hover:border-danger hover:text-danger' title='حذف' > <TrashIcon width={14} height={14} /> </button> </div> </td> </tr> ))} </tbody> </table> </div> </div> )} </div> ) ; }
+"use client";
+import { SearchIcon, TrashIcon, PencilIcon } from "@/components/icons";
+import { Button } from "@/components/ui/Button";
+import { useCustomers } from "./hooks/useCustomers";
+function date(value: string) {
+    return new Intl.DateTimeFormat("ar-SA", {
+        day: "numeric",
+        month: "short"
+    }).format(new Date(value));
+}
+export default function CustomersPage() {
+    const {
+        customers,
+        loading,
+        saving,
+        searchQuery,
+        name,
+        phone,
+        address,
+        notes,
+        editingId,
+        setSearchQuery,
+        setName,
+        setPhone,
+        setAddress,
+        setNotes,
+        handleSubmit,
+        startEditing,
+        handleDelete,
+        resetForm
+    } = useCustomers();
+    return (
+        <div className="mx-auto max-w-7xl px-6 py-8">
+            {""}
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {""}
+                <div>
+                    {""}
+                    <h1 className="font-display text-2xl font-semibold text-ink">
+                        {""}
+                        إدارة العملاء{""}
+                    </h1>{""}
+                    <p className="mt-1 text-sm text-ink-soft">
+                        {""}
+                        إدارة بيانات العملاء ومتابعة طلباتهم.{""}
+                    </p>{""}
+                </div>{""}
+                <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+                    {""}
+                    <SearchIcon
+                        width={16}
+                        height={16}
+                        className="text-ink-soft"
+                    />{""}
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder="البحث بالاسم أو الهاتف..."
+                        className="bg-transparent text-sm outline-none placeholder:text-ink-soft/70"
+                    />{""}
+                </div>{""}
+            </div>{""}
+            <div className="mb-8 rounded-2xl border border-line bg-surface p-5 shadow-sm">
+                {""}
+                <h2 className="mb-4 font-display font-semibold text-ink">
+                    {""}
+                    {editingId ? "تعديل بيانات العميل" : "إضافة عميل جديد"}{""}
+                </h2>{""}
+                <form
+                    onSubmit={handleSubmit}
+                    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                >
+                    {""}
+                    <label className="block">
+                        {""}
+                        <span className="mb-1.5 block text-xs font-medium text-ink-soft">
+                            {""}
+                            الاسم{""}
+                        </span>{""}
+                        <input
+                            required
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="اسم العميل"
+                            className="w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold"
+                        />{""}
+                    </label>{""}
+                    <label className="block">
+                        {""}
+                        <span className="mb-1.5 block text-xs font-medium text-ink-soft">
+                            {""}
+                            رقم الهاتف{""}
+                        </span>{""}
+                        <input
+                            required
+                            value={phone}
+                            onChange={e => setPhone(e.target.value)}
+                            placeholder="77xxxxxxx"
+                            className="w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold"
+                        />{""}
+                    </label>{""}
+                    <label className="block">
+                        {""}
+                        <span className="mb-1.5 block text-xs font-medium text-ink-soft">
+                            {""}
+                            العنوان (اختياري){""}
+                        </span>{""}
+                        <input
+                            value={address}
+                            onChange={e => setAddress(e.target.value)}
+                            placeholder="عنوان التوصيل"
+                            className="w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold"
+                        />{""}
+                    </label>{""}
+                    <label className="block">
+                        {""}
+                        <span className="mb-1.5 block text-xs font-medium text-ink-soft">
+                            {""}
+                            ملاحظات (اختياري){""}
+                        </span>{""}
+                        <input
+                            value={notes}
+                            onChange={e => setNotes(e.target.value)}
+                            placeholder="ملاحظات خاصة"
+                            className="w-full rounded-xl border border-line bg-background px-4 py-2.5 text-sm outline-none focus:border-gold"
+                        />{""}
+                    </label>{""}
+                    <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+                        {""}
+                        <Button type="submit" disabled={saving}>
+                            {""}
+                            {saving
+                                ? "جاري الحفظ..."
+                                : editingId
+                                  ? "تحديث"
+                                  : "إضافة عميل"}{""}
+                        </Button>{""}
+                        {editingId && (
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                className="rounded-xl border border-line px-4 py-2.5 text-sm text-ink-soft hover:bg-background"
+                            >
+                                {""}
+                                إلغاء{""}
+                            </button>
+                        )}{""}
+                    </div>{""}
+                </form>{""}
+            </div>{""}
+            {loading ? (
+                <div className="rounded-3xl border border-line bg-surface p-12 text-center">
+                    {""}
+                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand" />{""}
+                    <p className="text-sm text-ink-soft">
+                        جاري تحميل العملاء...
+                    </p>{""}
+                </div>
+            ) : customers.length === 0 ? (
+                <div className="rounded-3xl border border-line bg-surface p-12 text-center">
+                    {""}
+                    <div className="text-4xl">👥</div>{""}
+                    <p className="mt-3 font-semibold text-ink">لا يوجد عملاء</p>{""}
+                    <p className="mt-2 text-sm text-ink-soft">
+                        {""}
+                        {searchQuery
+                            ? "لا توجد نتائج تطابق البحث."
+                            : "لم يتم إضافة أي عميل حتى الآن."}{""}
+                    </p>{""}
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+                    {""}
+                    <div className="overflow-x-auto">
+                        {""}
+                        <table className="w-full min-w-[600px] text-right">
+                            {""}
+                            <thead className="bg-background">
+                                {""}
+                                <tr className="border-b border-line">
+                                    {""}
+                                    <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
+                                        {""}
+                                        العميل{""}
+                                    </th>{""}
+                                    <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
+                                        {""}
+                                        الهاتف{""}
+                                    </th>{""}
+                                    <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
+                                        {""}
+                                        الطلبات{""}
+                                    </th>{""}
+                                    <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
+                                        {""}
+                                        التاريخ{""}
+                                    </th>{""}
+                                    <th className="px-5 py-3 text-xs font-semibold text-ink-soft"></th>{""}
+                                </tr>{""}
+                            </thead>{""}
+                            <tbody className="divide-y divide-line">
+                                {""}
+                                {customers.map(customer => (
+                                    <tr
+                                        key={customer.id}
+                                        className="hover:bg-background/60"
+                                    >
+                                        {""}
+                                        <td className="px-5 py-4">
+                                            {""}
+                                            <div className="flex items-center gap-3">
+                                                {""}
+                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg font-bold text-success">
+                                                    {""}
+                                                    {customer.name
+                                                        .trim()
+                                                        .charAt(0) || "ع"}{""}
+                                                </div>{""}
+                                                <span className="font-semibold text-ink">
+                                                    {""}
+                                                    {customer.name}{""}
+                                                </span>{""}
+                                            </div>{""}
+                                        </td>{""}
+                                        <td
+                                            className="px-5 py-4 text-sm text-ink-soft"
+                                            dir="ltr"
+                                        >
+                                            {""}
+                                            {customer.phone}{""}
+                                        </td>{""}
+                                        <td className="px-5 py-4 text-sm font-medium text-ink">
+                                            {""}
+                                            {customer._count?.orders ?? 0}{""}
+                                        </td>{""}
+                                        <td className="px-5 py-4 text-xs text-ink-soft">
+                                            {""}
+                                            {date(customer.createdAt)}{""}
+                                        </td>{""}
+                                        <td className="px-5 py-4">
+                                            {""}
+                                            <div className="flex items-center gap-2">
+                                                {""}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        startEditing(customer)
+                                                    }
+                                                    className="rounded-lg border border-line p-2 text-ink-soft hover:border-gold hover:text-ink"
+                                                    title="تعديل"
+                                                >
+                                                    {""}
+                                                    <PencilIcon
+                                                        width={14}
+                                                        height={14}
+                                                    />{""}
+                                                </button>{""}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDelete(customer)
+                                                    }
+                                                    className="rounded-lg border border-line p-2 text-ink-soft hover:border-danger hover:text-danger"
+                                                    title="حذف"
+                                                >
+                                                    {""}
+                                                    <TrashIcon
+                                                        width={14}
+                                                        height={14}
+                                                    />{""}
+                                                </button>{""}
+                                            </div>{""}
+                                        </td>{""}
+                                    </tr>
+                                ))}{""}
+                            </tbody>{""}
+                        </table>{""}
+                    </div>{""}
+                </div>
+            )}{""}
+        </div>
+    );
+}
