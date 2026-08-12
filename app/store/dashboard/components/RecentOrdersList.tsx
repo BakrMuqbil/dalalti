@@ -1,5 +1,7 @@
 import { ArrowLeftIcon, ReceiptIcon } from "@/components/icons";
 import Link from "next/link";
+import { Spinner } from "../../components/Spinner";
+import { EmptyState } from "../../components/EmptyState";
 import type { DashboardOrder, DashboardOrderStatus } from "../hooks/useDashboardData";
 
 const statusLabels: Record<DashboardOrderStatus, string> = {
@@ -58,9 +60,13 @@ export function RecentOrdersList({
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-sm text-ink-soft">جاري تحميل الطلبات...</div>
+        <Spinner label="جاري تحميل الطلبات..." />
       ) : orders.length === 0 ? (
-        <div className="p-8 text-center text-sm text-ink-soft">لا توجد طلبات حتى الآن.</div>
+        <EmptyState
+          icon={<span className="text-4xl">📋</span>}
+          title="لا توجد طلبات"
+          description="لم يتم استلام أي طلبات حتى الآن."
+        />
       ) : (
         <div className="divide-y divide-line">
           {orders.map((order) => (

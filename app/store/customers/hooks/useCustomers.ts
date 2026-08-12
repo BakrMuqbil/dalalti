@@ -4,7 +4,10 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useToast } from '@/app/store/components/ToastProvider';
 import type { DashboardCustomer } from '@/app/store/dashboard/hooks/useDashboardData';
 
-export type Customer = DashboardCustomer;
+export type Customer = DashboardCustomer & {
+  address?: string | null;
+  notes?: string | null;
+};
 
 type CustomersResponse = {
   success: boolean;

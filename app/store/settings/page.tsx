@@ -2,6 +2,7 @@
 import { ChangeEvent, useRef } from "react";
 import { CogIcon, UploadIcon, TrashIcon, GlobeIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "../components/Spinner";
 import { useStoreSettings } from "./hooks/useStoreSettings";
 export default function SettingsPage() {
     const {
@@ -34,11 +35,9 @@ export default function SettingsPage() {
     if (loading) {
         return (
             <div className="mx-auto max-w-3xl px-6 py-8">
-                {" "}
-                <div className="rounded-3xl border border-line bg-surface p-12 text-center text-sm text-ink-soft">
-                    {" "}
-                    جاري تحميل بيانات المتجر...{" "}
-                </div>{" "}
+                <div className="rounded-3xl border border-line bg-surface">
+                    <Spinner label="جاري تحميل بيانات المتجر..." />
+                </div>
             </div>
         );
     }

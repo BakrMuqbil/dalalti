@@ -1,5 +1,7 @@
 import { ArrowLeftIcon, UsersIcon } from "@/components/icons";
 import Link from "next/link";
+import { Spinner } from "../../components/Spinner";
+import { EmptyState } from "../../components/EmptyState";
 import type { DashboardCustomer } from "../hooks/useDashboardData";
 
 function date(value: string) {
@@ -29,9 +31,13 @@ export function RecentCustomersList({
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-sm text-ink-soft">جاري تحميل العملاء...</div>
+        <Spinner label="جاري تحميل العملاء..." />
       ) : customers.length === 0 ? (
-        <div className="p-8 text-center text-sm text-ink-soft">لا يوجد عملاء حتى الآن.</div>
+        <EmptyState
+          icon={<span className="text-4xl">👥</span>}
+          title="لا يوجد عملاء"
+          description="لم يتم إضافة أي عميل حتى الآن."
+        />
       ) : (
         <div className="divide-y divide-line">
           {customers.map((customer) => (

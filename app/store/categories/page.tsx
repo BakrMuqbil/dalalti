@@ -1,6 +1,8 @@
 "use client";
 
 import { CategoryImageField } from "./components/CategoryImageField";
+import { Spinner } from "../components/Spinner";
+import { EmptyState } from "../components/EmptyState";
 import { Category, useCategories } from "./hooks/useCategories";
 
 export default function StoreCategoriesPage() {
@@ -241,19 +243,13 @@ export default function StoreCategoriesPage() {
           </div>
 
           {loading ? (
-            <div className="p-12 text-center">
-              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand" />
-              <p className="text-sm text-ink-soft">جاري تحميل الفئات...</p>
-            </div>
+            <Spinner label="جاري تحميل الفئات..." />
           ) : rootCategories.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="text-4xl">🗂️</div>
-
-              <p className="mt-3 font-semibold text-ink">لا توجد فئات</p>
-              <p className="mt-2 text-sm text-ink-soft">
-                أضف أول فئة مع صورتها من النموذج.
-              </p>
-            </div>
+            <EmptyState
+              icon={<span className="text-4xl">🗂️</span>}
+              title="لا توجد فئات"
+              description="أضف أول فئة مع صورتها من النموذج."
+            />
           ) : (
             <div>
               {rootCategories.map((category) => renderCategory(category))}
