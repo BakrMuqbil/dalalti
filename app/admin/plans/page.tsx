@@ -5,7 +5,7 @@ import Link from "next/link";
 
 type Plan = { id: string; name: string; billingPeriod: "MONTHLY" | "YEARLY"; price: string; isActive?: boolean; subscriptionsCount?: number };
 
-const empty = { name: "", billingPeriod: "MONTHLY" as const, price: "", isActive: true };
+const empty: Omit<Plan, 'id' | 'subscriptionsCount'> = { name: "", billingPeriod: "MONTHLY", price: "", isActive: true };
 
 export default function AdminPlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);

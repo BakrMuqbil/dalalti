@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     const customer = await prisma.customer.findFirst({ where: { id: customerId, storeId: store.id }, select: { id: true } });
     if (!customer) return NextResponse.json({ success: false, message: "العميل غير موجود في متجرك" }, { status: 400 });
 
-    const normalized = rawItems.map((item: unknown) => {
+    const normalized: { productId: string; variantId: string | null; quantity: number }[] = rawItems.map((item: unknown) => {
       const value = item as Record<string, unknown>;
       return {
         productId: typeof value.productId === "string" ? value.productId.trim() : "",
