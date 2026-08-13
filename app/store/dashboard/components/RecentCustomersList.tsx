@@ -1,7 +1,7 @@
 import { ArrowLeftIcon, UsersIcon } from "@/components/icons";
 import Link from "next/link";
-import { Spinner } from "../../components/Spinner";
-import { EmptyState } from "../../components/EmptyState";
+import { Spinner } from "@/components/feedback/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { DashboardCustomer } from "../hooks/useDashboardData";
 
 function date(value: string) {

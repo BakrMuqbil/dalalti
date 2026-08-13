@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { readJson, fetchWithAuth } from "@/lib/api-client";
 
 export type DashboardOrderStatus =
   | "NEW"
@@ -61,18 +62,8 @@ const emptyData: DashboardData = {
 };
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    cache: "no-store",
-    credentials: "include",
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || "تعذر تحميل بيانات لوحة التحكم");
-  }
-
-  return data as T;
+  const response = await fetchWithAuth(url);
+  return readJson(response, "تعذر تحميل بيانات لوحة التحكم") as Promise<T>;
 }
 
 type CollectionResponse<T> = {

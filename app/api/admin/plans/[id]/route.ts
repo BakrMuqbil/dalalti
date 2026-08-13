@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-auth";
+import { updatePlanSchema } from "@/lib/validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -39,31 +40,21 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params;
-    const body = await request.json();
+    const rawBody = await request.json();
+    const parsed = updatePlanSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات الباقة غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
+
+    const data = parsed.data;
     const current = await prisma.plan.findUnique({ where: { id } });
     if (!current) return NextResponse.json({ success: false, message: "الباقة غير موجودة" }, { status: 404 });
 
-    const data: { name?: string; billingPeriod?: "MONTHLY" | "YEARLY"; price?: number; isActive?: boolean } = {};
-
-    if (body.name !== undefined) {
-      if (typeof body.name !== "string" || !body.name.trim()) return NextResponse.json({ success: false, message: "اسم الباقة غير صالح" }, { status: 400 });
-      data.name = body.name.trim();
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ success: false, message: "لا توجد بيانات لتحديثها" }, { status: 400 });
     }
-    if (body.billingPeriod !== undefined) {
-      if (body.billingPeriod !== "MONTHLY" && body.billingPeriod !== "YEARLY") return NextResponse.json({ success: false, message: "فترة الفوترة غير صالحة" }, { status: 400 });
-      data.billingPeriod = body.billingPeriod;
-    }
-    if (body.price !== undefined) {
-      const price = Number(body.price);
-      if (!Number.isFinite(price) || price < 0) return NextResponse.json({ success: false, message: "سعر الباقة غير صالح" }, { status: 400 });
-      data.price = price;
-    }
-    if (body.isActive !== undefined) {
-      if (typeof body.isActive !== "boolean") return NextResponse.json({ success: false, message: "حالة الباقة غير صالحة" }, { status: 400 });
-      data.isActive = body.isActive;
-    }
-
-    if (Object.keys(data).length === 0) return NextResponse.json({ success: false, message: "لا توجد بيانات لتحديثها" }, { status: 400 });
 
     const name = data.name ?? current.name;
     const billingPeriod = data.billingPeriod ?? current.billingPeriod;

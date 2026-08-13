@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { useToast } from '@/app/store/components/ToastProvider';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useToast } from '@/hooks/useToast';
+import { useDebounce } from '@/hooks/useDebounce';
+import { readJson, fetchWithAuth } from '@/lib/api-client';
 import {
   Category,
   ImageDraft,
@@ -12,14 +14,6 @@ import {
   emptyProductForm,
   emptyVariantDraft,
 } from '../types';
-
-async function readJson(response: Response) {
-  const data = await response.json();
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || 'حدث خطأ في الطلب');
-  }
-  return data;
-}
 
 export interface ProductFilters {
   categoryId: string;
@@ -64,7 +58,11 @@ export function useProducts() {
     limit: 20,
   });
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterKey = useMemo(
+    () => `${searchQuery}|${filters.categoryId}|${filters.availability}|${filters.status}`,
+    [searchQuery, filters],
+  );
+  const debouncedFilterKey = useDebounce(filterKey, 300);
 
   const activeProducts = useMemo(
     () => products.filter((product) => product.status === 'ACTIVE').length,
@@ -95,10 +93,7 @@ export function useProducts() {
       setLoading(true);
       setError('');
       const qs = buildQueryString(targetPage);
-      const response = await fetch(`/api/store/products?${qs}`, {
-        cache: 'no-store',
-        credentials: 'include',
-      });
+      const response = await fetchWithAuth(`/api/store/products?${qs}`);
       const data = await readJson(response);
       setProducts(data.products);
       if (data.pagination) {
@@ -117,10 +112,7 @@ export function useProducts() {
 
   async function loadCategories() {
     try {
-      const response = await fetch('/api/store/categories', {
-        cache: 'no-store',
-        credentials: 'include',
-      });
+      const response = await fetchWithAuth('/api/store/categories');
       const data = await readJson(response);
       setCategories(data.categories ?? []);
     } catch (err) {
@@ -130,15 +122,9 @@ export function useProducts() {
   }
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setPage(1);
-      loadProducts(1);
-    }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [searchQuery, filters.categoryId, filters.availability, filters.status]);
+    setPage(1);
+    loadProducts(1);
+  }, [debouncedFilterKey]);
 
   useEffect(() => {
     void Promise.all([loadProducts(), loadCategories()]);
@@ -287,7 +273,7 @@ export function useProducts() {
   async function uploadProductImage(file: File, productId: string) {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `/api/store/products/${productId}/images/upload`,
       {
         method: 'POST',
@@ -307,7 +293,7 @@ export function useProducts() {
     for (const original of originalImages) {
       if (!currentExistingIds.has(original.id)) {
         await readJson(
-          await fetch(`/api/store/products/${productId}/images`, {
+          await fetchWithAuth(`/api/store/products/${productId}/images`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -343,7 +329,7 @@ export function useProducts() {
     for (let index = 0; index < preparedImages.length; index += 1) {
       const image = preparedImages[index];
       if (!image.id) {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `/api/store/products/${productId}/images`,
           {
             method: 'POST',
@@ -366,7 +352,7 @@ export function useProducts() {
         (original.isPrimary !== image.isPrimary || original.sortOrder !== index)
       ) {
         await readJson(
-          await fetch(`/api/store/products/${productId}/images`, {
+          await fetchWithAuth(`/api/store/products/${productId}/images`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -392,7 +378,7 @@ export function useProducts() {
     for (const original of originalVariants) {
       if (!currentExistingIds.has(original.id)) {
         await readJson(
-          await fetch(
+          await fetchWithAuth(
             `/api/store/products/${productId}/variants/${original.id}`,
             {
               method: 'DELETE',
@@ -420,7 +406,7 @@ export function useProducts() {
 
       if (variant.id) {
         await readJson(
-          await fetch(
+          await fetchWithAuth(
             `/api/store/products/${productId}/variants/${variant.id}`,
             {
               method: 'PATCH',
@@ -432,7 +418,7 @@ export function useProducts() {
         );
       } else {
         await readJson(
-          await fetch(`/api/store/products/${productId}/variants`, {
+          await fetchWithAuth(`/api/store/products/${productId}/variants`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -474,7 +460,7 @@ export function useProducts() {
     setSaving(true);
     try {
       const isEditing = Boolean(editingProduct);
-      const response = await fetch(
+      const response = await fetchWithAuth(
         isEditing
           ? `/api/store/products/${editingProduct!.id}`
           : '/api/store/products',
@@ -529,7 +515,7 @@ export function useProducts() {
 
     setDeletingId(product.id);
     try {
-      const response = await fetch(`/api/store/products/${product.id}`, {
+      const response = await fetchWithAuth(`/api/store/products/${product.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });

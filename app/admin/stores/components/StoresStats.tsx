@@ -1,8 +1,17 @@
+import { StatsSkeleton } from "@/components/ui/skeletons/StatsSkeleton";
 import type { Store } from "../hooks/useAdminStores";
 
 type Props = { stores: Store[]; loading: boolean };
 
 export function StoresStats({ stores, loading }: Props) {
+  if (loading) {
+    return (
+      <div className="mb-6">
+        <StatsSkeleton count={3} />
+      </div>
+    );
+  }
+
   const activeStores = stores.filter((store) => store.status === "ACTIVE").length;
   const activeSubscriptions = stores.filter((store) => store.subscription?.status === "ACTIVE").length;
   const cards = [
@@ -15,7 +24,7 @@ export function StoresStats({ stores, loading }: Props) {
       {cards.map((card) => (
         <div key={card.label} className="rounded-2xl border border-line bg-white p-5 shadow-[0_8px_30px_-24px_rgba(43,36,32,0.35)]">
           <p className="text-sm text-ink-soft">{card.label}</p>
-          <p className={`mt-2 font-mono text-3xl font-medium ${card.tone}`}>{loading ? "..." : card.value}</p>
+          <p className={`mt-2 font-mono text-3xl font-medium ${card.tone}`}>{card.value}</p>
         </div>
       ))}
     </div>

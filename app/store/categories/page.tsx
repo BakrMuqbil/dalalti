@@ -1,8 +1,8 @@
 "use client";
 
 import { CategoryImageField } from "./components/CategoryImageField";
-import { Spinner } from "../components/Spinner";
-import { EmptyState } from "../components/EmptyState";
+import { Spinner } from "@/components/feedback/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Category, useCategories } from "./hooks/useCategories";
 
 export default function StoreCategoriesPage() {

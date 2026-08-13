@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Spinner } from "@/components/feedback/Spinner";
+import { useToast } from "@/hooks/useToast";
 import type { Plan, Store } from "../hooks/useAdminStores";
 
 type DetailedStore = Store & {
@@ -29,10 +31,10 @@ export function StoreDetailsModal({ open, store, plans, onClose, onRefresh, onRe
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [extendDays, setExtendDays] = useState("30");
   const [newPassword, setNewPassword] = useState("");
   const [form, setForm] = useState({ name: "", slug: "", phone: "", description: "", ownerName: "", ownerPhone: "", ownerEmail: "" });
+  const { showToast } = useToast();
 
   async function loadDetails() {
     if (!store) return;
@@ -48,7 +50,7 @@ export function StoreDetailsModal({ open, store, plans, onClose, onRefresh, onRe
     finally { setLoading(false); }
   }
 
-  useEffect(() => { if (open) void loadDetails(); else { setDetails(null); setError(""); setSuccess(""); } }, [open, store?.id]);
+  useEffect(() => { if (open) void loadDetails(); else { setDetails(null); setError(""); } }, [open, store?.id]);
 
   const subscription = details?.subscription;
   const canCancel = subscription?.status === "ACTIVE";
@@ -57,10 +59,10 @@ export function StoreDetailsModal({ open, store, plans, onClose, onRefresh, onRe
   async function action(payload: Record<string, unknown>, message = "تم تنفيذ العملية") {
     if (!store) return;
     try {
-      setSaving(true); setError(""); setSuccess("");
+      setSaving(true); setError("");
       const result = await onRequest(store.id, payload);
       if (!result.success) throw new Error(result.message || "فشلت العملية");
-      setSuccess(result.message || message);
+      showToast(result.message || message, "success");
       await loadDetails();
       await onRefresh();
     } catch (e) { setError(e instanceof Error ? e.message : "حدث خطأ أثناء تنفيذ العملية"); }
@@ -72,10 +74,10 @@ export function StoreDetailsModal({ open, store, plans, onClose, onRefresh, onRe
     const payload: Record<string, unknown> = { ...form };
     if (newPassword.trim()) payload.newPassword = newPassword;
     try {
-      setSaving(true); setError(""); setSuccess("");
+      setSaving(true); setError("");
       const result = await onRequest(store.id, payload);
       if (!result.success) throw new Error(result.message || "فشل تحديث البيانات");
-      setSuccess(result.message || "تم تحديث البيانات");
+      showToast(result.message || "تم تحديث البيانات", "success");
       setNewPassword("");
       await loadDetails(); await onRefresh();
     } catch (e) { setError(e instanceof Error ? e.message : "حدث خطأ أثناء الحفظ"); }
@@ -94,8 +96,9 @@ export function StoreDetailsModal({ open, store, plans, onClose, onRefresh, onRe
 
         <div className="space-y-5 p-6">
           {error && <div className="rounded-2xl border border-danger/25 bg-danger-bg p-4 text-sm text-danger">{error}</div>}
-          {success && <div className="rounded-2xl border border-success/25 bg-success-bg p-4 text-sm text-success">{success}</div>}
-          {loading ? <div className="rounded-2xl border border-line bg-white p-12 text-center text-sm text-ink-soft">جاري تحميل تفاصيل الحساب...</div> : details && <>
+          {loading ? (
+            <Spinner label="جاري تحميل تفاصيل الحساب..." />
+          ) : details && <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[['المنتجات', details.counts.products], ['التصنيفات', details.counts.categories], ['العملاء', details.counts.customers], ['الطلبات', details.counts.orders]].map(([label, value]) => <div key={String(label)} className="rounded-2xl border border-line bg-white p-5"><p className="text-sm text-ink-soft">{label}</p><p className="mt-2 font-mono text-2xl font-semibold">{value}</p></div>)}
             </div>

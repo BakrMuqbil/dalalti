@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { StoreIdentityProvider } from "./components/StoreIdentityContext";
-import { ToastProvider } from "./components/ToastProvider";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 import { StoreHeader } from "./components/StoreHeader";
 
 /**

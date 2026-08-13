@@ -2,8 +2,8 @@
 
 import { SearchIcon, TrashIcon, PencilIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
-import { Spinner } from "../components/Spinner";
-import { EmptyState } from "../components/EmptyState";
+import { Spinner } from "@/components/feedback/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useCustomers } from "./hooks/useCustomers";
 
 function date(value: string) {

@@ -1,3 +1,6 @@
+import { Spinner } from "@/components/feedback/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StoreIcon } from "@/components/icons";
 import type { Store } from "../hooks/useAdminStores";
 
 function formatDate(value: string) {
@@ -26,7 +29,15 @@ export function StoresTable({ stores, loading, onDetails }: Props) {
           {!loading && <span className="rounded-full bg-background px-3 py-1 font-mono text-xs text-ink-soft">{stores.length} متجر</span>}
         </div>
       </div>
-      {loading ? <div className="p-12 text-center text-sm text-ink-soft">جاري تحميل المتاجر...</div> : stores.length === 0 ? <div className="p-12 text-center"><p className="font-semibold text-ink">لا توجد متاجر</p><p className="mt-2 text-sm text-ink-soft">لم يتم إنشاء أي متجر حتى الآن.</p></div> : (
+      {loading ? (
+        <Spinner label="جاري تحميل المتاجر..." />
+      ) : stores.length === 0 ? (
+        <EmptyState
+          icon={<StoreIcon width={28} height={28} className="text-ink-soft" />}
+          title="لا توجد متاجر"
+          description="لم يتم إنشاء أي متجر حتى الآن."
+        />
+      ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-right">
             <thead className="bg-background"><tr className="border-b border-line">{headings.map((heading) => <th key={heading} className="px-6 py-4 text-xs font-semibold text-ink-soft">{heading}</th>)}</tr></thead>

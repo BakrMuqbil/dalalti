@@ -1,7 +1,9 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import { useToast } from '@/app/store/components/ToastProvider';
+import { FormEvent, useEffect, useState } from 'react';
+import { useToast } from '@/hooks/useToast';
+import { useDebounce } from '@/hooks/useDebounce';
+import { readJson, fetchWithAuth } from '@/lib/api-client';
 import type { DashboardCustomer } from '@/app/store/dashboard/hooks/useDashboardData';
 
 export type Customer = DashboardCustomer & {
@@ -16,14 +18,6 @@ type CustomersResponse = {
   customer?: Customer;
 };
 
-async function readJson(response: Response): Promise<CustomersResponse> {
-  const data = (await response.json()) as CustomersResponse;
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || 'حدث خطأ في الطلب');
-  }
-  return data;
-}
-
 export function useCustomers() {
   const { showToast } = useToast();
 
@@ -32,7 +26,7 @@ export function useCustomers() {
   const [saving, setSaving] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -46,11 +40,7 @@ export function useCustomers() {
       const url = searchQuery.trim()
         ? `/api/store/customers?q=${encodeURIComponent(searchQuery.trim())}&limit=100`
         : '/api/store/customers?limit=100';
-      const response = await fetch(url, {
-        method: 'GET',
-        cache: 'no-store',
-        credentials: 'include',
-      });
+      const response = await fetchWithAuth(url);
       const data = await readJson(response);
       setCustomers(data.customers || []);
     } catch (err) {
@@ -65,15 +55,9 @@ export function useCustomers() {
   }
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      void loadCustomers();
-    }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    void loadCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
+  }, [debouncedSearch]);
 
   function resetForm() {
     setName('');
@@ -102,10 +86,9 @@ export function useCustomers() {
         : '/api/store/customers';
       const method = editingId ? 'PATCH' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           name: trimmedName,
           phone: trimmedPhone,
@@ -147,9 +130,8 @@ export function useCustomers() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/store/customers/${customerId}`, {
+      const response = await fetchWithAuth(`/api/store/customers/${customerId}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       await readJson(response);
       showToast('تم حذف العميل بنجاح', 'success');

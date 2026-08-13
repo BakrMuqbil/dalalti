@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { readJson, fetchWithAuth } from "@/lib/api-client";
 import { AdminStats } from "../types";
 
 export function useAdminDashboard() {
@@ -13,21 +14,16 @@ export function useAdminDashboard() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/admin/dashboard", {
-        cache: "no-store",
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "فشل تحميل بيانات لوحة الإدارة");
-      }
+      const response = await fetchWithAuth("/api/admin/dashboard");
+      const data = await readJson<{ stats: AdminStats }>(response, "فشل تحميل بيانات لوحة الإدارة");
 
       setStats(data.stats);
     } catch (err) {
       console.error("Load admin dashboard failed:", err);
-      setError(
-        err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات",
-      );
+      const msg =
+        err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات";
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }

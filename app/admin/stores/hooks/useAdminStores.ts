@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { readJson, fetchWithAuth } from "@/lib/api-client";
 
 export type Plan = {
   id: string;
@@ -66,17 +67,15 @@ export function useAdminStores() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/admin/stores", { cache: "no-store" });
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "فشل تحميل المتاجر");
-      }
+      const response = await fetchWithAuth("/api/admin/stores");
+      const data = await readJson(response, "فشل تحميل المتاجر");
 
       setStores(data.stores);
     } catch (error) {
       console.error("Failed to load stores:", error);
-      setError(error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المتاجر");
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المتاجر";
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -86,12 +85,8 @@ export function useAdminStores() {
     try {
       setLoadingPlans(true);
 
-      const response = await fetch("/api/admin/plans", { cache: "no-store" });
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "فشل تحميل الباقات");
-      }
+      const response = await fetchWithAuth("/api/admin/plans");
+      const data = await readJson(response, "فشل تحميل الباقات");
 
       setPlans(data.plans);
 
@@ -103,7 +98,9 @@ export function useAdminStores() {
       }
     } catch (error) {
       console.error("Failed to load plans:", error);
-      setFormError(error instanceof Error ? error.message : "حدث خطأ أثناء تحميل الباقات");
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء تحميل الباقات";
+      setFormError(msg);
+      throw new Error(msg);
     } finally {
       setLoadingPlans(false);
     }
@@ -135,39 +132,34 @@ export function useAdminStores() {
     setFormError("");
 
     try {
-      const response = await fetch("/api/admin/stores", {
+      const response = await fetchWithAuth("/api/admin/stores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "فشل إنشاء المتجر");
-      }
+      const data = await readJson(response, "فشل إنشاء المتجر");
 
       setShowAddStore(false);
       setForm({ ...emptyForm, planId: plans[0]?.id || "" });
       await loadStores();
     } catch (error) {
       console.error("Create store failed:", error);
-      setFormError(error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء المتجر");
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء المتجر";
+      setFormError(msg);
+      throw new Error(msg);
     } finally {
       setCreating(false);
     }
   }
 
   const requestStoreAction = useCallback(async (storeId: string, payload: Record<string, unknown>) => {
-    const response = await fetch(`/api/admin/stores/${storeId}`, {
+    const response = await fetchWithAuth(`/api/admin/stores/${storeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || "فشلت العملية");
-    }
+    const data = await readJson(response, "فشلت العملية");
     return data;
   }, []);
 

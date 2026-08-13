@@ -1,1 +1,143 @@
-'use client' ; import { FormEvent, useEffect, useState } from 'react' ; import { useToast } from '@/app/store/components/ToastProvider' ; type Store = { id: string; name: string; slug: string; description: string | null; logoUrl: string | null; phone: string | null; status: string; updatedAt: string; } ; type StoreResponse = { success: boolean; message?: string; store?: Store; } ; async function readJson(response: Response): Promise<StoreResponse> { const data = (await response.json()) as StoreResponse ; if (!response.ok || !data.success) { throw new Error(data.message || 'حدث خطأ في الطلب') ; } return data ; } export function useStoreSettings() { const { showToast } = useToast() ; const [store, setStore] = useState<Store | null>(null) ; const [loading, setLoading] = useState(true) ; const [saving, setSaving] = useState(false) ; const [uploading, setUploading] = useState(false) ; const [name, setName] = useState('') ; const [slug, setSlug] = useState('') ; const [description, setDescription] = useState('') ; const [phone, setPhone] = useState('') ; const [error, setError] = useState('') ; async function loadStore() { try { setLoading(true) ; setError('') ; const response = await fetch('/api/store', { method: 'GET', cache: 'no-store', credentials: 'include' }) ; const data = await readJson(response) ; if (data.store) { setStore(data.store) ; setName(data.store.name) ; setSlug(data.store.slug) ; setDescription(data.store.description ?? '') ; setPhone(data.store.phone ?? '') ; } } catch (err) { console.error('Load store failed:', err) ; showToast(err instanceof Error ? err.message : 'حدث خطأ أثناء تحميل بيانات المتجر', 'error') ; } finally { setLoading(false) ; } } useEffect(() => { void loadStore() ; }, []) ; async function handleSubmit(event: FormEvent<HTMLFormElement>) { event.preventDefault() ; if (saving) return ; const trimmedName = name.trim() ; const trimmedSlug = slug.trim() ; if (!trimmedName) { setError('اسم المتجر مطلوب') ; return ; } if (!trimmedSlug) { setError('رابط المتجر مطلوب') ; return ; } setSaving(true) ; setError('') ; try { const response = await fetch('/api/store', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ name: trimmedName, slug: trimmedSlug, description: description.trim() || null, phone: phone.trim() || null }), }) ; const data = await readJson(response) ; if (data.store) { setStore(data.store) ; showToast('تم تحديث بيانات المتجر بنجاح', 'success') ; } } catch (err) { console.error('Save store failed:', err) ; const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء حفظ بيانات المتجر' ; setError(msg) ; showToast(msg, 'error') ; } finally { setSaving(false) ; } } async function uploadLogo(file: File) { if (!file.type.startsWith('image/')) { showToast('الملف المحدد ليس صورة', 'warning') ; return ; } if (file.size > 10 * 1024 * 1024) { showToast('حجم الصورة يجب ألا يتجاوز 10MB', 'warning') ; return ; } setUploading(true) ; try { const formData = new FormData() ; formData.append('file', file) ; const response = await fetch('/api/store/logo/upload', { method: 'POST', credentials: 'include', body: formData }) ; const data = await response.json() ; if (!response.ok || !data.success) { throw new Error(data.message || 'فشل رفع الشعار') ; } setStore((prev) => prev ? { ...prev, logoUrl: data.logoUrl } : prev) ; showToast('تم رفع الشعار بنجاح', 'success') ; } catch (err) { console.error('Upload logo failed:', err) ; showToast(err instanceof Error ? err.message : 'حدث خطأ أثناء رفع الشعار', 'error') ; } finally { setUploading(false) ; } } return { store, loading, saving, uploading, name, slug, description, phone, error, setName, setSlug, setDescription, setPhone, handleSubmit, uploadLogo } ; }
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+import { useToast } from "@/hooks/useToast";
+import { readJson, fetchWithAuth } from "@/lib/api-client";
+type Store = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoUrl: string | null;
+  phone: string | null;
+  status: string;
+  updatedAt: string;
+};
+type StoreResponse = { success: boolean; message?: string; store?: Store };
+export function useStoreSettings() {
+  const { showToast } = useToast();
+  const [store, setStore] = useState<Store | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+  async function loadStore() {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await fetchWithAuth("/api/store");
+      const data = await readJson(response);
+      if (data.store) {
+        setStore(data.store);
+        setName(data.store.name);
+        setSlug(data.store.slug);
+        setDescription(data.store.description ?? "");
+        setPhone(data.store.phone ?? "");
+      }
+    } catch (err) {
+      console.error("Load store failed:", err);
+      showToast(
+        err instanceof Error
+          ? err.message
+          : "حدث خطأ أثناء تحميل بيانات المتجر",
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    void loadStore();
+  }, []);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (saving) return;
+    const trimmedName = name.trim();
+    const trimmedSlug = slug.trim();
+    if (!trimmedName) {
+      setError("اسم المتجر مطلوب");
+      return;
+    }
+    if (!trimmedSlug) {
+      setError("رابط المتجر مطلوب");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetchWithAuth("/api/store", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          slug: trimmedSlug,
+          description: description.trim() || null,
+          phone: phone.trim() || null,
+        }),
+      });
+      const data = await readJson(response);
+      if (data.store) {
+        setStore(data.store);
+        showToast("تم تحديث بيانات المتجر بنجاح", "success");
+      }
+    } catch (err) {
+      console.error("Save store failed:", err);
+      const msg =
+        err instanceof Error ? err.message : "حدث خطأ أثناء حفظ بيانات المتجر";
+      setError(msg);
+      showToast(msg, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function uploadLogo(file: File) {
+    if (!file.type.startsWith("image/")) {
+      showToast("الملف المحدد ليس صورة", "warning");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("حجم الصورة يجب ألا يتجاوز 10MB", "warning");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetchWithAuth("/api/store/logo/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await readJson(response, "فشل رفع الشعار");
+      setStore((prev) => (prev ? { ...prev, logoUrl: data.logoUrl } : prev));
+      showToast("تم رفع الشعار بنجاح", "success");
+    } catch (err) {
+      console.error("Upload logo failed:", err);
+      showToast(
+        err instanceof Error ? err.message : "حدث خطأ أثناء رفع الشعار",
+        "error",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+  return {
+    store,
+    loading,
+    saving,
+    uploading,
+    name,
+    slug,
+    description,
+    phone,
+    error,
+    setName,
+    setSlug,
+    setDescription,
+    setPhone,
+    handleSubmit,
+    uploadLogo,
+  };
+}

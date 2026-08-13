@@ -2,7 +2,7 @@
 import { ChangeEvent, useRef } from "react";
 import { CogIcon, UploadIcon, TrashIcon, GlobeIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
-import { Spinner } from "../components/Spinner";
+import { Spinner } from "@/components/feedback/Spinner";
 import { useStoreSettings } from "./hooks/useStoreSettings";
 export default function SettingsPage() {
     const {

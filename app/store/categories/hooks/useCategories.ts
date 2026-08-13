@@ -1,1 +1,241 @@
-'use client' ; import { FormEvent, useEffect, useState } from 'react' ; import { useToast } from '@/app/store/components/ToastProvider' ; export type Category = { id: string; storeId: string; parentId: string | null; name: string; imageUrl: string | null; createdAt: string; updatedAt: string; children?: Category[]; _count?: { products: number; children: number; }; } ; type CategoryResponse = { success: boolean; message?: string; categories?: Category[]; category?: Category; } ; async function readJson(response: Response): Promise<CategoryResponse> { const data = (await response.json()) as CategoryResponse ; if (!response.ok || !data.success) { throw new Error(data.message || 'حدث خطأ في الطلب') ; } return data ; } export function useCategories() { const { showToast } = useToast() ; const [categories, setCategories] = useState<Category[]>([]) ; const [loading, setLoading] = useState(true) ; const [saving, setSaving] = useState(false) ; const [name, setName] = useState('') ; const [parentId, setParentId] = useState('') ; const [imageUrl, setImageUrl] = useState('') ; const [imageFile, setImageFile] = useState<File | undefined>() ; const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>() ; const [editingId, setEditingId] = useState<string | null>(null) ; async function loadCategories() { try { setLoading(true) ; const response = await fetch('/api/store/categories', { method: 'GET', cache: 'no-store', credentials: 'include' }) ; const data = await readJson(response) ; setCategories(data.categories || []) ; } catch (err) { console.error('Load categories failed:', err) ; showToast(err instanceof Error ? err.message : 'حدث خطأ أثناء تحميل التصنيفات', 'error') ; } finally { setLoading(false) ; } } useEffect(() => { void loadCategories() ; }, []) ; function resetForm() { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl) ; setName('') ; setParentId('') ; setImageUrl('') ; setImageFile(undefined) ; setImagePreviewUrl(undefined) ; setEditingId(null) ; } function handleImageFile(file: File) { if (!file.type.startsWith('image/')) { showToast('الملف المحدد ليس صورة', 'warning') ; return ; } if (file.size > 10 * 1024 * 1024) { showToast('حجم الصورة يجب ألا يتجاوز 10MB', 'warning') ; return ; } if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl) ; setImageFile(file) ; setImagePreviewUrl(URL.createObjectURL(file)) ; } function removeImage() { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl) ; setImageFile(undefined) ; setImagePreviewUrl(undefined) ; setImageUrl('') ; } async function uploadCategoryImage(categoryId: string, file: File) { const formData = new FormData() ; formData.append('file', file) ; const response = await fetch(`/api/store/categories/${categoryId}/images/upload`, { method: 'POST', credentials: 'include', body: formData }) ; const data = await response.json() ; if (!response.ok || !data.success) { throw new Error(data.message || 'فشل رفع صورة الفئة') ; } return data.imageUrl as string ; } async function createCategory(trimmedName: string) { const response = await fetch('/api/store/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ name: trimmedName, parentId: parentId || null, imageUrl: null }) }) ; return readJson(response) ; } async function updateCategory(categoryId: string, trimmedName: string, finalImageUrl: string | null) { const response = await fetch(`/api/store/categories/${categoryId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ name: trimmedName, imageUrl: finalImageUrl }) }) ; return readJson(response) ; } async function handleSubmit(event: FormEvent<HTMLFormElement>) { event.preventDefault() ; if (saving) return ; const trimmedName = name.trim() ; if (!trimmedName) { showToast('اسم التصنيف مطلوب', 'warning') ; return ; } if (!editingId && !imageFile) { showToast('صورة الفئة مطلوبة', 'warning') ; return ; } if (editingId && !imageUrl && !imageFile) { showToast('صورة الفئة مطلوبة', 'warning') ; return ; } setSaving(true) ; try { if (!editingId) { if (!imageFile) throw new Error('صورة الفئة مطلوبة') ; const created = await createCategory(trimmedName) ; if (!created.category) throw new Error('تم إنشاء الفئة ولكن لم يتم إرجاع بياناتها') ; const categoryId = created.category.id ; try { const uploadedImageUrl = await uploadCategoryImage(categoryId, imageFile) ; await updateCategory(categoryId, trimmedName, uploadedImageUrl) ; } catch (uploadError) { try { await fetch(`/api/store/categories/${categoryId}`, { method: 'DELETE', credentials: 'include' }) ; } catch { /* ignore cleanup error */ } throw uploadError ; } showToast('تم إنشاء التصنيف والصورة بنجاح', 'success') ; } else { let finalImageUrl = imageUrl || null ; if (imageFile) { finalImageUrl = await uploadCategoryImage(editingId, imageFile) ; } await updateCategory(editingId, trimmedName, finalImageUrl) ; showToast('تم تحديث التصنيف والصورة بنجاح', 'success') ; } resetForm() ; await loadCategories() ; } catch (err) { console.error('Save category failed:', err) ; showToast(err instanceof Error ? err.message : 'حدث خطأ أثناء حفظ التصنيف', 'error') ; } finally { setSaving(false) ; } } function startEditing(category: Category) { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl) ; setEditingId(category.id) ; setName(category.name) ; setParentId(category.parentId ?? '') ; setImageUrl(category.imageUrl ?? '') ; setImageFile(undefined) ; setImagePreviewUrl(undefined) ; } async function handleDelete(category: Category) { if (saving) return ; if (!window.confirm(`هل أنت متأكد من حذف التصنيف '${category.name}'؟`)) return ; try { setSaving(true) ; const response = await fetch(`/api/store/categories/${category.id}`, { method: 'DELETE', credentials: 'include' }) ; await readJson(response) ; if (editingId === category.id) resetForm() ; showToast('تم حذف التصنيف بنجاح', 'success') ; await loadCategories() ; } catch (err) { console.error('Delete category failed:', err) ; showToast(err instanceof Error ? err.message : 'حدث خطأ أثناء حذف التصنيف', 'error') ; } finally { setSaving(false) ; } } const rootCategories = categories.filter(c => !c.parentId) ; const childCategories = categories.filter(c => Boolean(c.parentId)) ; function getChildren(parentCategoryId: string) { return childCategories.filter(c => c.parentId === parentCategoryId) ; } return { categories, loading, saving, name, parentId, imageUrl, imageFile, imagePreviewUrl, editingId, setName, setParentId, rootCategories, getChildren, loadCategories, resetForm, handleImageFile, removeImage, handleSubmit, startEditing, handleDelete } ; }
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+import { useToast } from "@/hooks/useToast";
+import { readJson, fetchWithAuth } from "@/lib/api-client";
+export type Category = {
+  id: string;
+  storeId: string;
+  parentId: string | null;
+  name: string;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  children?: Category[];
+  _count?: { products: number; children: number };
+};
+type CategoryResponse = {
+  success: boolean;
+  message?: string;
+  categories?: Category[];
+  category?: Category;
+};
+export function useCategories() {
+  const { showToast } = useToast();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [name, setName] = useState("");
+  const [parentId, setParentId] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | undefined>();
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  async function loadCategories() {
+    try {
+      setLoading(true);
+      const response = await fetchWithAuth("/api/store/categories");
+      const data = await readJson(response);
+      setCategories(data.categories || []);
+    } catch (err) {
+      console.error("Load categories failed:", err);
+      showToast(
+        err instanceof Error ? err.message : "حدث خطأ أثناء تحميل التصنيفات",
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    void loadCategories();
+  }, []);
+  function resetForm() {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setName("");
+    setParentId("");
+    setImageUrl("");
+    setImageFile(undefined);
+    setImagePreviewUrl(undefined);
+    setEditingId(null);
+  }
+  function handleImageFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      showToast("الملف المحدد ليس صورة", "warning");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("حجم الصورة يجب ألا يتجاوز 10MB", "warning");
+      return;
+    }
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImageFile(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+  }
+  function removeImage() {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImageFile(undefined);
+    setImagePreviewUrl(undefined);
+    setImageUrl("");
+  }
+  async function uploadCategoryImage(categoryId: string, file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetchWithAuth(
+      `/api/store/categories/${categoryId}/images/upload`,
+      { method: "POST", body: formData },
+    );
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "فشل رفع صورة الفئة");
+    }
+    return data.imageUrl as string;
+  }
+  async function createCategory(trimmedName: string) {
+    const response = await fetchWithAuth("/api/store/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name: trimmedName,
+        parentId: parentId || null,
+        imageUrl: null,
+      }),
+    });
+    return readJson(response);
+  }
+  async function updateCategory(
+    categoryId: string,
+    trimmedName: string,
+    finalImageUrl: string | null,
+  ) {
+    const response = await fetchWithAuth(`/api/store/categories/${categoryId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name: trimmedName, imageUrl: finalImageUrl }),
+    });
+    return readJson(response);
+  }
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (saving) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showToast("اسم التصنيف مطلوب", "warning");
+      return;
+    }
+    if (!editingId && !imageFile) {
+      showToast("صورة الفئة مطلوبة", "warning");
+      return;
+    }
+    if (editingId && !imageUrl && !imageFile) {
+      showToast("صورة الفئة مطلوبة", "warning");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (!editingId) {
+        if (!imageFile) throw new Error("صورة الفئة مطلوبة");
+        const created = await createCategory(trimmedName);
+        if (!created.category)
+          throw new Error("تم إنشاء الفئة ولكن لم يتم إرجاع بياناتها");
+        const categoryId = created.category.id;
+        try {
+          const uploadedImageUrl = await uploadCategoryImage(
+            categoryId,
+            imageFile,
+          );
+          await updateCategory(categoryId, trimmedName, uploadedImageUrl);
+        } catch (uploadError) {
+          try {
+            await fetchWithAuth(`/api/store/categories/${categoryId}`, {
+              method: "DELETE",
+              credentials: "include",
+            });
+          } catch {
+            /* ignore cleanup error */
+          }
+          throw uploadError;
+        }
+        showToast("تم إنشاء التصنيف والصورة بنجاح", "success");
+      } else {
+        let finalImageUrl = imageUrl || null;
+        if (imageFile) {
+          finalImageUrl = await uploadCategoryImage(editingId, imageFile);
+        }
+        await updateCategory(editingId, trimmedName, finalImageUrl);
+        showToast("تم تحديث التصنيف والصورة بنجاح", "success");
+      }
+      resetForm();
+      await loadCategories();
+    } catch (err) {
+      console.error("Save category failed:", err);
+      showToast(
+        err instanceof Error ? err.message : "حدث خطأ أثناء حفظ التصنيف",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+  function startEditing(category: Category) {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setEditingId(category.id);
+    setName(category.name);
+    setParentId(category.parentId ?? "");
+    setImageUrl(category.imageUrl ?? "");
+    setImageFile(undefined);
+    setImagePreviewUrl(undefined);
+  }
+  async function handleDelete(category: Category) {
+    if (saving) return;
+    if (!window.confirm(`هل أنت متأكد من حذف التصنيف '${category.name}'؟`))
+      return;
+    try {
+      setSaving(true);
+      const response = await fetchWithAuth(`/api/store/categories/${category.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      await readJson(response);
+      if (editingId === category.id) resetForm();
+      showToast("تم حذف التصنيف بنجاح", "success");
+      await loadCategories();
+    } catch (err) {
+      console.error("Delete category failed:", err);
+      showToast(
+        err instanceof Error ? err.message : "حدث خطأ أثناء حذف التصنيف",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+  const rootCategories = categories.filter((c) => !c.parentId);
+  const childCategories = categories.filter((c) => Boolean(c.parentId));
+  function getChildren(parentCategoryId: string) {
+    return childCategories.filter((c) => c.parentId === parentCategoryId);
+  }
+  return {
+    categories,
+    loading,
+    saving,
+    name,
+    parentId,
+    imageUrl,
+    imageFile,
+    imagePreviewUrl,
+    editingId,
+    setName,
+    setParentId,
+    rootCategories,
+    getChildren,
+    loadCategories,
+    resetForm,
+    handleImageFile,
+    removeImage,
+    handleSubmit,
+    startEditing,
+    handleDelete,
+  };
+}

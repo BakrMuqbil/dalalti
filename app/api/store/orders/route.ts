@@ -1,28 +1,51 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
+import { createOrderSchema, orderQuerySchema } from "@/lib/validation";
 
 async function getStore(userId: string) {
-  return prisma.store.findUnique({ where: { ownerId: userId }, select: { id: true, status: true } });
+  return prisma.store.findUnique({
+    where: { ownerId: userId },
+    select: { id: true, status: true },
+  });
 }
 
 export async function GET(request: Request) {
   const auth = await requireStoreOwner();
-  if (!auth) return NextResponse.json({ success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" }, { status: 401 });
+  if (!auth) {
+    return NextResponse.json(
+      { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
+      { status: 401 }
+    );
+  }
 
   try {
     const store = await getStore(auth.userId);
-    if (!store) return NextResponse.json({ success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" }, { status: 404 });
+    if (!store) {
+      return NextResponse.json(
+        { success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" },
+        { status: 404 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
-    const limit = Math.min(Math.max(Number(searchParams.get("limit") || 50), 1), 100);
+    const parsed = orderQuerySchema.safeParse({
+      status: searchParams.get("status") || undefined,
+      limit: searchParams.get("limit") || "50",
+    });
 
-    const validStatuses = new Set(["NEW", "CONFIRMED", "PROCESSING", "READY", "DELIVERED", "CANCELLED"]);
-    if (status && !validStatuses.has(status)) return NextResponse.json({ success: false, message: "حالة الطلب غير صالحة" }, { status: 400 });
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "معايير البحث غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
+
+    const { status, limit } = parsed.data;
 
     const orders = await prisma.order.findMany({
-      where: { storeId: store.id, ...(status ? { status: status as "NEW" | "CONFIRMED" | "PROCESSING" | "READY" | "DELIVERED" | "CANCELLED" } : {}) },
+      where: {
+        storeId: store.id,
+        ...(status ? { status } : {}),
+      },
       include: {
         customer: true,
         items: {
@@ -35,10 +58,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      orders: orders.map((order) => ({
+      orders: orders.map((order: any) => ({
         ...order,
         totalAmount: order.totalAmount.toString(),
-        items: order.items.map((item) => ({
+        items: order.items.map((item: any) => ({
           ...item,
           unitPrice: item.unitPrice.toString(),
           totalPrice: item.totalPrice.toString(),
@@ -49,51 +72,75 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Get store orders error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحميل الطلبات" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "حدث خطأ أثناء تحميل الطلبات" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: Request) {
   const auth = await requireStoreOwner();
-  if (!auth) return NextResponse.json({ success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" }, { status: 401 });
+  if (!auth) {
+    return NextResponse.json(
+      { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
+      { status: 401 }
+    );
+  }
 
   try {
     const store = await getStore(auth.userId);
-    if (!store) return NextResponse.json({ success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" }, { status: 404 });
-    if (store.status !== "ACTIVE") return NextResponse.json({ success: false, message: "المتجر غير نشط" }, { status: 403 });
-
-    const body = await request.json();
-    const customerId = typeof body.customerId === "string" ? body.customerId.trim() : "";
-    const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
-    const rawItems = Array.isArray(body.items) ? body.items : [];
-
-    if (!customerId || rawItems.length === 0) return NextResponse.json({ success: false, message: "العميل وعناصر الطلب مطلوبان" }, { status: 400 });
-
-    const customer = await prisma.customer.findFirst({ where: { id: customerId, storeId: store.id }, select: { id: true } });
-    if (!customer) return NextResponse.json({ success: false, message: "العميل غير موجود في متجرك" }, { status: 400 });
-
-    const normalized: { productId: string; variantId: string | null; quantity: number }[] = rawItems.map((item: unknown) => {
-      const value = item as Record<string, unknown>;
-      return {
-        productId: typeof value.productId === "string" ? value.productId.trim() : "",
-        variantId: typeof value.variantId === "string" && value.variantId.trim() ? value.variantId.trim() : null,
-        quantity: Number(value.quantity),
-      };
-    });
-
-    if (normalized.some((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > 1000)) {
-      return NextResponse.json({ success: false, message: "عناصر الطلب غير صالحة" }, { status: 400 });
+    if (!store) {
+      return NextResponse.json(
+        { success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" },
+        { status: 404 }
+      );
+    }
+    if (store.status !== "ACTIVE") {
+      return NextResponse.json(
+        { success: false, message: "المتجر غير نشط" },
+        { status: 403 }
+      );
     }
 
-    const productIds = [...new Set(normalized.map((item) => item.productId))];
-    const products = await prisma.product.findMany({ where: { id: { in: productIds }, storeId: store.id }, include: { variants: true } });
-    const productMap = new Map(products.map((product) => [product.id, product]));
+    const rawBody = await request.json();
+    const parsed = createOrderSchema.safeParse(rawBody);
 
-    if (products.length !== productIds.length) return NextResponse.json({ success: false, message: "يوجد منتج غير موجود في متجرك" }, { status: 400 });
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات الطلب غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
 
-    const items = normalized.map((item) => {
-      const product = productMap.get(item.productId)!;
-      const variant = item.variantId ? product.variants.find((candidate) => candidate.id === item.variantId) : null;
+    const { customerId, notes, items } = parsed.data;
+
+    const customer = await prisma.customer.findFirst({
+      where: { id: customerId, storeId: store.id },
+      select: { id: true },
+    });
+    if (!customer) {
+      return NextResponse.json(
+        { success: false, message: "العميل غير موجود في متجرك" },
+        { status: 400 }
+      );
+    }
+
+    const productIds = [...new Set(items.map((item) => item.productId))];
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, storeId: store.id },
+      include: { variants: true },
+    });
+    const productMap = new Map(products.map((product: any) => [product.id, product]));
+
+    if (products.length !== productIds.length) {
+      return NextResponse.json(
+        { success: false, message: "يوجد منتج غير موجود في متجرك" },
+        { status: 400 }
+      );
+    }
+
+    const orderItems = items.map((item) => {
+      const product = productMap.get(item.productId) as any;
+      const variant = item.variantId ? product.variants.find((candidate: any) => candidate.id === item.variantId) : null;
       if (item.variantId && !variant) throw new Error("VARIANT_NOT_FOUND");
       if (product.status !== "ACTIVE" || product.availability !== "AVAILABLE") throw new Error("PRODUCT_UNAVAILABLE");
       if (variant && variant.availability !== "AVAILABLE") throw new Error("VARIANT_UNAVAILABLE");
@@ -103,7 +150,7 @@ export async function POST(request: Request) {
       return { ...item, unitPrice, totalPrice };
     });
 
-    const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const totalAmount = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
     const order = await prisma.order.create({
       data: {
@@ -113,7 +160,7 @@ export async function POST(request: Request) {
         totalAmount,
         notes,
         items: {
-          create: items.map((item) => ({
+          create: orderItems.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
@@ -125,16 +172,37 @@ export async function POST(request: Request) {
       include: { customer: true, items: { include: { product: true, variant: true } } },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "تم إنشاء الطلب بنجاح",
-      order: { ...order, totalAmount: order.totalAmount.toString() },
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "تم إنشاء الطلب بنجاح",
+        order: { ...order, totalAmount: order.totalAmount.toString() },
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    if (error instanceof Error && error.message === "VARIANT_NOT_FOUND") return NextResponse.json({ success: false, message: "المتغير غير موجود لهذا المنتج" }, { status: 400 });
-    if (error instanceof Error && error.message === "PRODUCT_UNAVAILABLE") return NextResponse.json({ success: false, message: "أحد المنتجات غير متاح حاليًا" }, { status: 400 });
-    if (error instanceof Error && error.message === "VARIANT_UNAVAILABLE") return NextResponse.json({ success: false, message: "أحد متغيرات المنتجات غير متاح حاليًا" }, { status: 400 });
+    if (error instanceof Error && error.message === "VARIANT_NOT_FOUND") {
+      return NextResponse.json(
+        { success: false, message: "المتغير غير موجود لهذا المنتج" },
+        { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message === "PRODUCT_UNAVAILABLE") {
+      return NextResponse.json(
+        { success: false, message: "أحد المنتجات غير متاح حاليًا" },
+        { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message === "VARIANT_UNAVAILABLE") {
+      return NextResponse.json(
+        { success: false, message: "أحد متغيرات المنتجات غير متاح حاليًا" },
+        { status: 400 }
+      );
+    }
     console.error("Create store order error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء إنشاء الطلب" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "حدث خطأ أثناء إنشاء الطلب" },
+      { status: 500 }
+    );
   }
 }

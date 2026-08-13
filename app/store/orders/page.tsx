@@ -7,8 +7,8 @@ import {
   ChevronLeftIcon,
   ChevronDownIcon,
 } from "@/components/icons";
-import { Spinner } from "../components/Spinner";
-import { EmptyState } from "../components/EmptyState";
+import { Spinner } from "@/components/feedback/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useOrders, type OrderStatus } from "./hooks/useOrders";
 
 const statusLabels: Record<OrderStatus, string> = {
