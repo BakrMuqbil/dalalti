@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { requireAdmin } from "@/lib/require-auth";
+import { adminUpdateStoreSchema } from "@/lib/validation";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -56,29 +57,9 @@ async function getStore(id: string) {
   return prisma.store.findUnique({
     where: { id },
     include: {
-      owner: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          role: true,
-          createdAt: true,
-        },
-      },
-      subscription: {
-        include: {
-          plan: true,
-        },
-      },
-      _count: {
-        select: {
-          products: true,
-          categories: true,
-          customers: true,
-          orders: true,
-        },
-      },
+      owner: { select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true } },
+      subscription: { include: { plan: true } },
+      _count: { select: { products: true, categories: true, customers: true, orders: true } },
     },
   });
 }
@@ -98,7 +79,7 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!admin) {
     return NextResponse.json(
       { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -109,7 +90,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (!store) {
       return NextResponse.json(
         { success: false, message: "المتجر غير موجود" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -118,7 +99,7 @@ export async function GET(_request: Request, context: RouteContext) {
     console.error("Admin store details error:", error);
     return NextResponse.json(
       { success: false, message: "حدث خطأ أثناء تحميل تفاصيل المتجر" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -128,30 +109,35 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!admin) {
     return NextResponse.json(
       { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
   try {
     const { id } = await context.params;
-    const body = await request.json();
+    const rawBody = await request.json();
+    const parsed = adminUpdateStoreSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
+
+    const body = parsed.data;
     const existing = await getStore(id);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, message: "المتجر غير موجود" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
-    const action = typeof body.action === "string" ? body.action : null;
+    const action = body.action ?? null;
 
     if (action === "SUSPEND_STORE" || action === "ACTIVATE_STORE") {
       const status = action === "SUSPEND_STORE" ? "SUSPENDED" : "ACTIVE";
-      const store = await prisma.store.update({
-        where: { id },
-        data: { status },
-      });
+      const store = await prisma.store.update({ where: { id }, data: { status } });
       return NextResponse.json({
         success: true,
         message: status === "ACTIVE" ? "تم تفعيل المتجر" : "تم تجميد المتجر",
@@ -159,19 +145,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       });
     }
 
-    if (
-      action === "CANCEL_SUBSCRIPTION" ||
-      action === "ACTIVATE_SUBSCRIPTION"
-    ) {
+    if (action === "CANCEL_SUBSCRIPTION" || action === "ACTIVATE_SUBSCRIPTION") {
       if (!existing.subscription) {
         return NextResponse.json(
           { success: false, message: "لا يوجد اشتراك مرتبط بهذا المتجر" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
-      const nextStatus =
-        action === "CANCEL_SUBSCRIPTION" ? "CANCELLED" : "ACTIVE";
+      const nextStatus = action === "CANCEL_SUBSCRIPTION" ? "CANCELLED" : "ACTIVE";
       let startsAt = existing.subscription.startsAt;
       let endsAt = existing.subscription.endsAt;
 
@@ -187,10 +169,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       return NextResponse.json({
         success: true,
-        message:
-          nextStatus === "ACTIVE"
-            ? "تم تفعيل الاشتراك"
-            : "تم إلغاء الاشتراك",
+        message: nextStatus === "ACTIVE" ? "تم تفعيل الاشتراك" : "تم إلغاء الاشتراك",
         subscription: {
           id: subscription.id,
           status: subscription.status,
@@ -204,15 +183,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (!existing.subscription) {
         return NextResponse.json(
           { success: false, message: "لا يوجد اشتراك مرتبط بهذا المتجر" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
-      const days = Number(body.days);
-      if (!Number.isInteger(days) || days <= 0 || days > 3650) {
+      const days = body.days;
+      if (days === undefined || !Number.isInteger(days) || days <= 0 || days > 3650) {
         return NextResponse.json(
           { success: false, message: "عدد أيام التمديد غير صالح" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -225,10 +204,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         where: { id: existing.subscription.id },
         data: {
           status: "ACTIVE",
-          startsAt:
-            existing.subscription.startsAt > now
-              ? existing.subscription.startsAt
-              : now,
+          startsAt: existing.subscription.startsAt > now ? existing.subscription.startsAt : now,
           endsAt,
         },
       });
@@ -246,11 +222,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     if (action === "CHANGE_PLAN") {
-      const planId = typeof body.planId === "string" ? body.planId.trim() : "";
+      const planId = body.planId;
       if (!planId) {
         return NextResponse.json(
           { success: false, message: "معرف الباقة مطلوب" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -258,7 +234,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (!plan || !plan.isActive) {
         return NextResponse.json(
           { success: false, message: "الباقة غير موجودة أو غير فعالة" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -320,77 +296,24 @@ export async function PATCH(request: Request, context: RouteContext) {
     const storeData: Record<string, unknown> = {};
     const ownerData: Record<string, unknown> = {};
 
-    if (body.name !== undefined) {
-      if (typeof body.name !== "string" || !body.name.trim()) {
-        return NextResponse.json(
-          { success: false, message: "اسم المتجر غير صالح" },
-          { status: 400 },
-        );
-      }
-      storeData.name = body.name.trim();
-    }
-
-    if (body.slug !== undefined) {
-      if (typeof body.slug !== "string" || !body.slug.trim()) {
-        return NextResponse.json(
-          { success: false, message: "رابط المتجر غير صالح" },
-          { status: 400 },
-        );
-      }
-      storeData.slug = body.slug.trim().toLowerCase();
-    }
-
-    for (const field of ["description", "logoUrl", "phone"] as const) {
-      if (body[field] !== undefined) {
-        storeData[field] =
-          typeof body[field] === "string" ? body[field].trim() || null : null;
-      }
-    }
-
-    if (body.status !== undefined) {
-      if (body.status !== "ACTIVE" && body.status !== "SUSPENDED") {
-        return NextResponse.json(
-          { success: false, message: "حالة المتجر غير صالحة" },
-          { status: 400 },
-        );
-      }
-      storeData.status = body.status;
-    }
-
-    if (body.ownerName !== undefined) {
-      if (typeof body.ownerName !== "string" || !body.ownerName.trim()) {
-        return NextResponse.json(
-          { success: false, message: "اسم المالك غير صالح" },
-          { status: 400 },
-        );
-      }
-      ownerData.name = body.ownerName.trim();
-    }
-
-    if (body.ownerPhone !== undefined) {
-      ownerData.phone =
-        typeof body.ownerPhone === "string" ? body.ownerPhone.trim() || null : null;
-    }
-
-    if (body.ownerEmail !== undefined) {
-      ownerData.email =
-        typeof body.ownerEmail === "string" ? body.ownerEmail.trim() || null : null;
-    }
+    if (body.name !== undefined) storeData.name = body.name;
+    if (body.slug !== undefined) storeData.slug = body.slug;
+    if (body.description !== undefined) storeData.description = body.description;
+    if (body.logoUrl !== undefined) storeData.logoUrl = body.logoUrl;
+    if (body.phone !== undefined) storeData.phone = body.phone;
+    if (body.status !== undefined) storeData.status = body.status;
+    if (body.ownerName !== undefined) ownerData.name = body.ownerName;
+    if (body.ownerPhone !== undefined) ownerData.phone = body.ownerPhone;
+    if (body.ownerEmail !== undefined) ownerData.email = body.ownerEmail;
 
     if (body.newPassword !== undefined) {
-      if (typeof body.newPassword !== "string" || body.newPassword.length < 8) {
-        return NextResponse.json(
-          { success: false, message: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" },
-          { status: 400 },
-        );
-      }
       ownerData.passwordHash = await hashPassword(body.newPassword);
     }
 
     if (Object.keys(storeData).length === 0 && Object.keys(ownerData).length === 0) {
       return NextResponse.json(
         { success: false, message: "لا توجد بيانات لتحديثها" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -402,7 +325,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (duplicate) {
         return NextResponse.json(
           { success: false, message: "رابط المتجر مستخدم بالفعل" },
-          { status: 409 },
+          { status: 409 }
         );
       }
     }
@@ -417,22 +340,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
       if (or.length > 0) {
         const duplicate = await prisma.user.findFirst({
-          where: {
-            OR: or,
-            NOT: { id: existing.owner.id },
-          },
+          where: { OR: or, NOT: { id: existing.owner.id } },
           select: { id: true },
         });
         if (duplicate) {
           return NextResponse.json(
             { success: false, message: "رقم الهاتف أو البريد الإلكتروني مستخدم بالفعل" },
-            { status: 409 },
+            { status: 409 }
           );
         }
       }
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: typeof prisma) => {
       if (Object.keys(ownerData).length > 0) {
         await tx.user.update({ where: { id: existing.owner.id }, data: ownerData });
       }
@@ -451,7 +371,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     console.error("Admin update store error:", error);
     return NextResponse.json(
       { success: false, message: "حدث خطأ أثناء تحديث المتجر" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

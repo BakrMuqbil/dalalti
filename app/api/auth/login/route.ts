@@ -2,58 +2,36 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { createAuthToken } from "@/lib/auth";
+import { loginSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawBody = await request.json();
+    const parsed = loginSchema.safeParse(rawBody);
 
-    const phone =
-      typeof body.phone === "string"
-        ? body.phone.trim()
-        : "";
-
-    const password =
-      typeof body.password === "string"
-        ? body.password
-        : "";
-
-    if (!phone || !password) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "رقم الهاتف وكلمة المرور مطلوبان",
-        },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
     }
 
+    const { phone, password } = parsed.data;
+
     const user = await prisma.user.findUnique({
-      where: {
-        phone,
-      },
+      where: { phone },
     });
 
     if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "بيانات الدخول غير صحيحة",
-        },
+        { success: false, message: "بيانات الدخول غير صحيحة" },
         { status: 401 }
       );
     }
 
-    const validPassword = await verifyPassword(
-      password,
-      user.passwordHash
-    );
+    const validPassword = await verifyPassword(password, user.passwordHash);
 
     if (!validPassword) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "بيانات الدخول غير صحيحة",
-        },
+        { success: false, message: "بيانات الدخول غير صحيحة" },
         { status: 401 }
       );
     }
@@ -84,12 +62,8 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error("Login error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء تسجيل الدخول",
-      },
+      { success: false, message: "حدث خطأ أثناء تسجيل الدخول" },
       { status: 500 }
     );
   }

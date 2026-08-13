@@ -1,53 +1,47 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
+import { createProductSchema, productQuerySchema } from "@/lib/validation";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
 
   if (!auth || auth.role !== "STORE_OWNER") {
     return NextResponse.json(
-      {
-        success: false,
-        message: "غير مصرح لك بتنفيذ هذا الإجراء",
-      },
+      { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
       { status: 401 }
     );
   }
 
   try {
     const store = await prisma.store.findUnique({
-      where: {
-        ownerId: auth.userId,
-      },
-      select: {
-        id: true,
-      },
+      where: { ownerId: auth.userId },
+      select: { id: true },
     });
 
     if (!store) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "لا يوجد متجر مرتبط بهذا الحساب",
-        },
+        { success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" },
         { status: 404 }
       );
     }
 
     const { searchParams } = new URL(request.url);
+    const parsed = productQuerySchema.safeParse({
+      q: searchParams.get("q") || undefined,
+      categoryId: searchParams.get("categoryId") || undefined,
+      availability: searchParams.get("availability") || undefined,
+      status: searchParams.get("status") || undefined,
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "20",
+    });
 
-    // Search
-    const q = searchParams.get("q")?.trim();
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "معايير البحث غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
 
-    // Filters
-    const categoryId = searchParams.get("categoryId")?.trim();
-    const availability = searchParams.get("availability");
-    const status = searchParams.get("status");
-
-    // Pagination
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+    const { q, categoryId, availability, status, page, limit } = parsed.data;
     const skip = (page - 1) * limit;
 
     const whereConditions: Array<Record<string, unknown>> = [
@@ -67,11 +61,11 @@ export async function GET(request: Request) {
       whereConditions.push({ categoryId });
     }
 
-    if (availability === "AVAILABLE" || availability === "UNAVAILABLE") {
+    if (availability) {
       whereConditions.push({ availability });
     }
 
-    if (status === "ACTIVE" || status === "INACTIVE") {
+    if (status) {
       whereConditions.push({ status });
     }
 
@@ -82,16 +76,10 @@ export async function GET(request: Request) {
         where,
         include: {
           category: true,
-          images: {
-            orderBy: {
-              sortOrder: "asc",
-            },
-          },
+          images: { orderBy: { sortOrder: "asc" } },
           variants: true,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -103,21 +91,12 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       products,
-      pagination: {
-        total,
-        pages,
-        page,
-        limit,
-      },
+      pagination: { total, pages, page, limit },
     });
   } catch (error) {
     console.error("Get store products error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء تحميل المنتجات",
-      },
+      { success: false, message: "حدث خطأ أثناء تحميل المنتجات" },
       { status: 500 }
     );
   }
@@ -128,138 +107,60 @@ export async function POST(request: Request) {
 
   if (!auth || auth.role !== "STORE_OWNER") {
     return NextResponse.json(
-      {
-        success: false,
-        message: "غير مصرح لك بتنفيذ هذا الإجراء",
-      },
+      { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
       { status: 401 }
     );
   }
 
   try {
-    const body = await request.json();
+    const rawBody = await request.json();
+    const parsed = createProductSchema.safeParse(rawBody);
 
-    const name =
-      typeof body.name === "string"
-        ? body.name.trim()
-        : "";
-
-    const description =
-      typeof body.description === "string"
-        ? body.description.trim()
-        : "";
-
-    const price = body.price;
-
-    const availability =
-      body.availability === "UNAVAILABLE"
-        ? "UNAVAILABLE"
-        : body.availability === "AVAILABLE"
-          ? "AVAILABLE"
-          : "AVAILABLE";
-
-    const status =
-      body.status === "INACTIVE"
-        ? "INACTIVE"
-        : body.status === "ACTIVE"
-          ? "ACTIVE"
-          : "ACTIVE";
-
-    const categoryId =
-      typeof body.categoryId === "string" &&
-      body.categoryId.trim()
-        ? body.categoryId.trim()
-        : null;
-
-    if (!name) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "اسم المنتج مطلوب",
-        },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات المنتج غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
     }
 
-    if (
-      price === undefined ||
-      price === null ||
-      price === "" ||
-      Number.isNaN(Number(price)) ||
-      Number(price) < 0
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "سعر المنتج غير صالح",
-        },
-        { status: 400 }
-      );
-    }
+    const { name, description, price, availability, status, categoryId } = parsed.data;
 
     const store = await prisma.store.findUnique({
-      where: {
-        ownerId: auth.userId,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
+      where: { ownerId: auth.userId },
+      select: { id: true, status: true },
     });
 
     if (!store) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "لا يوجد متجر مرتبط بهذا الحساب",
-        },
+        { success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" },
         { status: 404 }
       );
     }
 
     if (store.status !== "ACTIVE") {
       return NextResponse.json(
-        {
-          success: false,
-          message: "المتجر غير نشط",
-        },
+        { success: false, message: "المتجر غير نشط" },
         { status: 403 }
       );
     }
 
     if (categoryId) {
       const category = await prisma.category.findFirst({
-        where: {
-          id: categoryId,
-          storeId: store.id,
-        },
+        where: { id: categoryId, storeId: store.id },
       });
-
       if (!category) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "التصنيف غير موجود في متجرك",
-          },
+          { success: false, message: "التصنيف غير موجود في متجرك" },
           { status: 400 }
         );
       }
     }
 
-    const existingProduct =
-      await prisma.product.findFirst({
-        where: {
-          storeId: store.id,
-          name,
-        },
-      });
+    const existingProduct = await prisma.product.findFirst({
+      where: { storeId: store.id, name },
+    });
 
     if (existingProduct) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "يوجد منتج بهذا الاسم بالفعل",
-        },
+        { success: false, message: "يوجد منتج بهذا الاسم بالفعل" },
         { status: 409 }
       );
     }
@@ -269,34 +170,22 @@ export async function POST(request: Request) {
         storeId: store.id,
         categoryId,
         name,
-        description: description || null,
-        price: Number(price),
+        description,
+        price,
         availability,
         status,
       },
-      include: {
-        category: true,
-        images: true,
-        variants: true,
-      },
+      include: { category: true, images: true, variants: true },
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "تم إنشاء المنتج بنجاح",
-        product,
-      },
+      { success: true, message: "تم إنشاء المنتج بنجاح", product },
       { status: 201 }
     );
   } catch (error) {
     console.error("Create store product error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء إنشاء المنتج",
-      },
+      { success: false, message: "حدث خطأ أثناء إنشاء المنتج" },
       { status: 500 }
     );
   }

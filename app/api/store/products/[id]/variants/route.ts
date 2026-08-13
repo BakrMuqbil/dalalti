@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
+import { createVariantSchema } from "@/lib/validation";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -16,10 +17,7 @@ async function getStoreProduct(userId: string, productId: string) {
   if (store.status !== "ACTIVE") return null;
 
   const product = await prisma.product.findFirst({
-    where: {
-      id: productId,
-      storeId: store.id,
-    },
+    where: { id: productId, storeId: store.id },
     select: { id: true },
   });
 
@@ -53,26 +51,15 @@ export async function GET(
     }
 
     const variants = await prisma.productVariant.findMany({
-      where: {
-        productId: ownership.productId,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
+      where: { productId: ownership.productId },
+      orderBy: { createdAt: "asc" },
     });
 
-    return NextResponse.json({
-      success: true,
-      variants,
-    });
+    return NextResponse.json({ success: true, variants });
   } catch (error) {
     console.error("Get product variants error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء تحميل المتغيرات",
-      },
+      { success: false, message: "حدث خطأ أثناء تحميل المتغيرات" },
       { status: 500 }
     );
   }
@@ -93,8 +80,6 @@ export async function POST(
 
   try {
     const { id } = await context.params;
-    const body = await request.json();
-
     const ownership = await getStoreProduct(auth.userId, id);
 
     if (!ownership) {
@@ -104,75 +89,30 @@ export async function POST(
       );
     }
 
-    const color =
-      typeof body.color === "string"
-        ? body.color.trim() || null
-        : null;
+    const rawBody = await request.json();
+    const parsed = createVariantSchema.safeParse(rawBody);
 
-    const size =
-      typeof body.size === "string"
-        ? body.size.trim() || null
-        : null;
-
-    const price =
-      body.price === undefined ||
-      body.price === null ||
-      body.price === ""
-        ? null
-        : Number(body.price);
-
-    if (price !== null && (!Number.isFinite(price) || price < 0)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "سعر المتغير غير صالح",
-        },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات المتغير غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
     }
+
+    const { color, size, price, availability } = parsed.data;
 
     if (!color && !size) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "يجب تحديد اللون أو المقاس على الأقل",
-        },
-        { status: 400 }
-      );
-    }
-
-    const availability =
-      body.availability === undefined
-        ? "AVAILABLE"
-        : body.availability;
-
-    if (
-      availability !== "AVAILABLE" &&
-      availability !== "UNAVAILABLE"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "حالة التوفر غير صالحة",
-        },
+        { success: false, message: "يجب تحديد اللون أو المقاس على الأقل" },
         { status: 400 }
       );
     }
 
     const existing = await prisma.productVariant.findFirst({
-      where: {
-        productId: ownership.productId,
-        color,
-        size,
-      },
+      where: { productId: ownership.productId, color, size },
     });
 
     if (existing) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "هذا المتغير موجود بالفعل",
-        },
+        { success: false, message: "هذا المتغير موجود بالفعل" },
         { status: 409 }
       );
     }
@@ -188,21 +128,13 @@ export async function POST(
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "تم إنشاء المتغير بنجاح",
-        variant,
-      },
+      { success: true, message: "تم إنشاء المتغير بنجاح", variant },
       { status: 201 }
     );
   } catch (error) {
     console.error("Create product variant error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء إنشاء المتغير",
-      },
+      { success: false, message: "حدث خطأ أثناء إنشاء المتغير" },
       { status: 500 }
     );
   }

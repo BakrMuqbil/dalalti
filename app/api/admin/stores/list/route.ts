@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-auth";
+import { adminStoreListSchema } from "@/lib/validation";
 
 export async function GET(request: Request) {
   const admin = await requireAdmin();
@@ -8,32 +9,31 @@ export async function GET(request: Request) {
   if (!admin) {
     return NextResponse.json(
       { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search")?.trim() || "";
-    const status = searchParams.get("status");
-    const subscriptionStatus = searchParams.get("subscriptionStatus");
-    const limit = Math.min(Math.max(Number(searchParams.get("limit") || 100), 1), 200);
+    const parsed = adminStoreListSchema.safeParse({
+      search: searchParams.get("search") || undefined,
+      status: searchParams.get("status") || undefined,
+      subscriptionStatus: searchParams.get("subscriptionStatus") || undefined,
+      limit: searchParams.get("limit") || "100",
+    });
 
-    const storeStatuses = new Set(["ACTIVE", "SUSPENDED"]);
-    const subscriptionStatuses = new Set(["ACTIVE", "EXPIRED", "CANCELLED"]);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "معايير البحث غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
 
-    if (status && !storeStatuses.has(status)) {
-      return NextResponse.json({ success: false, message: "حالة المتجر غير صالحة" }, { status: 400 });
-    }
-    if (subscriptionStatus && !subscriptionStatuses.has(subscriptionStatus)) {
-      return NextResponse.json({ success: false, message: "حالة الاشتراك غير صالحة" }, { status: 400 });
-    }
+    const { search, status, subscriptionStatus, limit } = parsed.data;
 
     const stores = await prisma.store.findMany({
       where: {
-        ...(status ? { status: status as "ACTIVE" | "SUSPENDED" } : {}),
+        ...(status ? { status } : {}),
         ...(subscriptionStatus
-          ? { subscription: { status: subscriptionStatus as "ACTIVE" | "EXPIRED" | "CANCELLED" } }
+          ? { subscription: { status: subscriptionStatus } }
           : {}),
         ...(search
           ? {
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      stores: stores.map((store) => ({
+      stores: stores.map((store: { id: string; name: string; slug: string; status: string; createdAt: Date; owner: { id: string; name: string; phone: string; email: string | null }; subscription: { id: string; status: string; startsAt: Date; endsAt: Date; plan: { id: string; name: string; price: { toString(): string }; billingPeriod: string } } | null }) => ({
         ...store,
         subscription: store.subscription
           ? {
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     console.error("Admin stores list error:", error);
     return NextResponse.json(
       { success: false, message: "حدث خطأ أثناء تحميل المتاجر" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

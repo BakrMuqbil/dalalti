@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
 import { requireAuth } from "@/lib/require-auth";
+import { updateVariantSchema } from "@/lib/validation";
 
 type RouteContext = {
   params: Promise<{
@@ -16,13 +16,8 @@ async function getOwnedVariant(
   variantId: string
 ) {
   const store = await prisma.store.findUnique({
-    where: {
-      ownerId: userId,
-    },
-    select: {
-      id: true,
-      status: true,
-    },
+    where: { ownerId: userId },
+    select: { id: true, status: true },
   });
 
   if (!store || store.status !== "ACTIVE") return null;
@@ -31,9 +26,7 @@ async function getOwnedVariant(
     where: {
       id: variantId,
       productId,
-      product: {
-        storeId: store.id,
-      },
+      product: { storeId: store.id },
     },
   });
 
@@ -48,30 +41,28 @@ export async function PATCH(
 
   if (!auth || auth.role !== "STORE_OWNER") {
     return NextResponse.json(
-      {
-        success: false,
-        message: "غير مصرح لك بتنفيذ هذا الإجراء",
-      },
+      { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
       { status: 401 }
     );
   }
 
   try {
     const { id, variantId } = await context.params;
-    const body = await request.json();
+    const rawBody = await request.json();
+    const parsed = updateVariantSchema.safeParse(rawBody);
 
-    const variant = await getOwnedVariant(
-      auth.userId,
-      id,
-      variantId
-    );
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "بيانات المتغير غير صالحة";
+      return NextResponse.json({ success: false, message }, { status: 400 });
+    }
+
+    const body = parsed.data;
+
+    const variant = await getOwnedVariant(auth.userId, id, variantId);
 
     if (!variant) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "المتغير غير موجود",
-        },
+        { success: false, message: "المتغير غير موجود" },
         { status: 404 }
       );
     }
@@ -83,114 +74,43 @@ export async function PATCH(
       availability?: "AVAILABLE" | "UNAVAILABLE";
     } = {};
 
-    if (body.color !== undefined) {
-      data.color =
-        typeof body.color === "string"
-          ? body.color.trim() || null
-          : null;
-    }
+    if (body.color !== undefined) data.color = body.color;
+    if (body.size !== undefined) data.size = body.size;
+    if (body.price !== undefined) data.price = body.price;
+    if (body.availability !== undefined) data.availability = body.availability;
 
-    if (body.size !== undefined) {
-      data.size =
-        typeof body.size === "string"
-          ? body.size.trim() || null
-          : null;
-    }
-
-    if (body.price !== undefined) {
-      if (
-        body.price === null ||
-        body.price === ""
-      ) {
-        data.price = null;
-      } else {
-        const price = Number(body.price);
-
-        if (!Number.isFinite(price) || price < 0) {
-          return NextResponse.json(
-            {
-              success: false,
-              message: "سعر المتغير غير صالح",
-            },
-            { status: 400 }
-          );
-        }
-
-        data.price = price;
-      }
-    }
-
-    if (body.availability !== undefined) {
-      if (
-        body.availability !== "AVAILABLE" &&
-        body.availability !== "UNAVAILABLE"
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "حالة التوفر غير صالحة",
-          },
-          { status: 400 }
-        );
-      }
-
-      data.availability = body.availability;
-    }
-
-    const nextColor =
-      data.color !== undefined
-        ? data.color
-        : variant.color;
-
-    const nextSize =
-      data.size !== undefined
-        ? data.size
-        : variant.size;
+    const nextColor = data.color !== undefined ? data.color : variant.color;
+    const nextSize = data.size !== undefined ? data.size : variant.size;
 
     if (!nextColor && !nextSize) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "يجب تحديد اللون أو المقاس على الأقل",
-        },
+        { success: false, message: "يجب تحديد اللون أو المقاس على الأقل" },
         { status: 400 }
       );
     }
 
-    if (
-      data.color !== undefined ||
-      data.size !== undefined
-    ) {
-      const duplicate =
-        await prisma.productVariant.findFirst({
-          where: {
-            productId: id,
-            color: nextColor,
-            size: nextSize,
-            NOT: {
-              id: variantId,
-            },
-          },
-        });
+    if (data.color !== undefined || data.size !== undefined) {
+      const duplicate = await prisma.productVariant.findFirst({
+        where: {
+          productId: id,
+          color: nextColor,
+          size: nextSize,
+          NOT: { id: variantId },
+        },
+      });
 
       if (duplicate) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "هذا المتغير موجود بالفعل",
-          },
+          { success: false, message: "هذا المتغير موجود بالفعل" },
           { status: 409 }
         );
       }
     }
 
-    const updatedVariant =
-      await prisma.productVariant.update({
-        where: {
-          id: variantId,
-        },
-        data,
-      });
+    const updatedVariant = await prisma.productVariant.update({
+      where: { id: variantId },
+      data,
+    });
 
     return NextResponse.json({
       success: true,
@@ -199,12 +119,8 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("Update product variant error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء تحديث المتغير",
-      },
+      { success: false, message: "حدث خطأ أثناء تحديث المتغير" },
       { status: 500 }
     );
   }
@@ -218,10 +134,7 @@ export async function DELETE(
 
   if (!auth || auth.role !== "STORE_OWNER") {
     return NextResponse.json(
-      {
-        success: false,
-        message: "غير مصرح لك بتنفيذ هذا الإجراء",
-      },
+      { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
       { status: 401 }
     );
   }
@@ -229,26 +142,17 @@ export async function DELETE(
   try {
     const { id, variantId } = await context.params;
 
-    const variant = await getOwnedVariant(
-      auth.userId,
-      id,
-      variantId
-    );
+    const variant = await getOwnedVariant(auth.userId, id, variantId);
 
     if (!variant) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "المتغير غير موجود",
-        },
+        { success: false, message: "المتغير غير موجود" },
         { status: 404 }
       );
     }
 
     await prisma.productVariant.delete({
-      where: {
-        id: variantId,
-      },
+      where: { id: variantId },
     });
 
     return NextResponse.json({
@@ -257,14 +161,9 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Delete product variant error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء حذف المتغير",
-      },
+      { success: false, message: "حدث خطأ أثناء حذف المتغير" },
       { status: 500 }
     );
   }
 }
-

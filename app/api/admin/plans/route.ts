@@ -32,7 +32,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      plans: plans.map((plan) => ({
+      plans: plans.map((plan: { id: string; name: string; billingPeriod: string; price: { toString(): string } }) => ({
         id: plan.id,
         name: plan.name,
         billingPeriod: plan.billingPeriod,
