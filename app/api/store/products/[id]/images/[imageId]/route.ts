@@ -96,7 +96,7 @@ export async function PATCH(
     }
 
     if (data.isPrimary === true) {
-      const image = await prisma.$transaction(async (tx: typeof prisma) => {
+      const image = await prisma.$transaction(async (tx) => {
         await tx.productImage.updateMany({
           where: {
             productId: id,

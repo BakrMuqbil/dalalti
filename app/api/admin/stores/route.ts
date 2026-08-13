@@ -25,7 +25,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      stores: stores.map((store: { id: string; name: string; slug: string; status: string; createdAt: Date; owner: { id: string; name: string; phone: string; email: string | null }; subscription: { id: string; status: string; startsAt: Date; endsAt: Date; plan: { id: string; name: string; billingPeriod: string; price: { toString(): string } } } | null }) => ({
+      stores: stores.map((store: { id: string; name: string; slug: string; status: string; createdAt: Date; owner: { id: string; name: string; phone: string | null; email: string | null }; subscription: { id: string; status: string; startsAt: Date; endsAt: Date; plan: { id: string; name: string; billingPeriod: string; price: { toString(): string } } } | null }) => ({
         id: store.id,
         name: store.name,
         slug: store.slug,
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
 
     const passwordHash = await hashPassword(password);
 
-    const result = await prisma.$transaction(async (tx: typeof prisma) => {
+    const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           name,

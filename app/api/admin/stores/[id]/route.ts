@@ -352,7 +352,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
     }
 
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx) => {
       if (Object.keys(ownerData).length > 0) {
         await tx.user.update({ where: { id: existing.owner.id }, data: ownerData });
       }

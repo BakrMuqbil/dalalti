@@ -1,12 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const secret = process.env.AUTH_SECRET;
-
-if (!secret) {
-  throw new Error("AUTH_SECRET is not defined");
+function getSecretKey() {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error("AUTH_SECRET is not defined");
+  }
+  return new TextEncoder().encode(secret);
 }
-
-const secretKey = new TextEncoder().encode(secret);
 
 export type AuthPayload = {
   userId: string;
@@ -23,11 +23,11 @@ export async function createAuthToken(payload: AuthPayload) {
     })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(secretKey);
+    .sign(getSecretKey());
 }
 
 export async function verifyAuthToken(token: string) {
-  const { payload } = await jwtVerify(token, secretKey);
+  const { payload } = await jwtVerify(token, getSecretKey());
 
   return {
     userId: payload.userId as string,

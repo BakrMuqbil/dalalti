@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      stores: stores.map((store: { id: string; name: string; slug: string; status: string; createdAt: Date; owner: { id: string; name: string; phone: string; email: string | null }; subscription: { id: string; status: string; startsAt: Date; endsAt: Date; plan: { id: string; name: string; price: { toString(): string }; billingPeriod: string } } | null }) => ({
+      stores: stores.map((store: { id: string; name: string; slug: string; status: string; createdAt: Date; owner: { id: string; name: string; phone: string | null; email: string | null }; subscription: { id: string; status: string; startsAt: Date; endsAt: Date; plan: { id: string; name: string; price: { toString(): string }; billingPeriod: string } } | null }) => ({
         ...store,
         subscription: store.subscription
           ? {
