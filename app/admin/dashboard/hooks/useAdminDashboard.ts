@@ -20,9 +20,10 @@ export function useAdminDashboard() {
       setStats(data.stats);
     } catch (err) {
       console.error("Load admin dashboard failed:", err);
-      setError(
-        err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات",
-      );
+      const msg =
+        err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات";
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }

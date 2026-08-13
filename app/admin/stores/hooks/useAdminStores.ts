@@ -73,7 +73,9 @@ export function useAdminStores() {
       setStores(data.stores);
     } catch (error) {
       console.error("Failed to load stores:", error);
-      setError(error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المتاجر");
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المتاجر";
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -96,7 +98,9 @@ export function useAdminStores() {
       }
     } catch (error) {
       console.error("Failed to load plans:", error);
-      setFormError(error instanceof Error ? error.message : "حدث خطأ أثناء تحميل الباقات");
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء تحميل الباقات";
+      setFormError(msg);
+      throw new Error(msg);
     } finally {
       setLoadingPlans(false);
     }
@@ -141,7 +145,9 @@ export function useAdminStores() {
       await loadStores();
     } catch (error) {
       console.error("Create store failed:", error);
-      setFormError(error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء المتجر");
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء المتجر";
+      setFormError(msg);
+      throw new Error(msg);
     } finally {
       setCreating(false);
     }
