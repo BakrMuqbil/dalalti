@@ -69,7 +69,7 @@ export default function StoreDashboardPage() {
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <DashboardStat
           label="المنتجات"
-          value={loading ? "—" : products}
+          value={products}
           hint={
             unavailableProducts
               ? `${unavailableProducts} غير متوفر`
@@ -78,30 +78,34 @@ export default function StoreDashboardPage() {
           tone="brand"
           icon={<BoxIcon width={20} height={20} />}
           href="/store/products"
+          loading={loading}
         />
         <DashboardStat
           label="التصنيفات"
-          value={loading ? "—" : categories}
+          value={categories}
           hint="الرئيسية والفرعية"
           tone="gold"
           icon={<TagIcon width={20} height={20} />}
           href="/store/categories"
+          loading={loading}
         />
         <DashboardStat
           label="العملاء"
-          value={loading ? "—" : customers}
+          value={customers}
           hint="العملاء المسجلون"
           tone="success"
           icon={<UsersIcon width={20} height={20} />}
           href="/store/customers"
+          loading={loading}
         />
         <DashboardStat
           label="الطلبات"
-          value={loading ? "—" : orders}
+          value={orders}
           hint={`${newOrders} جديد · ${processingOrders} قيد التنفيذ`}
           tone="ink"
           icon={<ReceiptIcon width={20} height={20} />}
           href="/store/orders"
+          loading={loading}
         />
       </section>
 
