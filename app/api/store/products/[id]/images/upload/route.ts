@@ -4,6 +4,7 @@ import { requireStoreOwner } from "@/lib/require-auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
+import { validateUploadedImage } from "@/lib/upload-security";
 
 type RouteContext = {
   params: Promise<{
@@ -12,14 +13,15 @@ type RouteContext = {
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_DIMENSIONS: [number, number] = [8000, 8000];
 
-const ALLOWED_TYPES = new Set([
+const ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
   "image/avif",
-]);
+];
 
 export const runtime = "nodejs";
 
@@ -100,50 +102,33 @@ export async function POST(
       );
     }
 
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "صيغة الصورة غير مدعومة. استخدم JPG أو PNG أو WebP أو GIF أو AVIF",
-        },
-        { status: 400 },
-      );
-    }
+    const validation = await validateUploadedImage(file, {
+      maxFileSize: MAX_FILE_SIZE,
+      maxDimensions: MAX_DIMENSIONS,
+      allowedMimeTypes: ALLOWED_TYPES,
+    });
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (!validation.valid) {
       return NextResponse.json(
         {
           success: false,
-          message: "حجم الصورة يجب ألا يتجاوز 10MB",
+          message: validation.error,
         },
         { status: 400 },
       );
     }
 
     const arrayBuffer = await file.arrayBuffer();
-
     const buffer = Buffer.from(arrayBuffer);
 
-    const extension =
-      file.type === "image/jpeg"
-        ? "jpg"
-        : file.type === "image/png"
-          ? "png"
-          : file.type === "image/webp"
-            ? "webp"
-            : file.type === "image/gif"
-              ? "gif"
-              : "avif";
-
-    const fileName = `products/${productId}/${crypto.randomUUID()}.${extension}`;
+    const fileName = `products/${productId}/${crypto.randomUUID()}.${validation.extension}`;
 
     const blob = await put(
       fileName,
       buffer,
       {
         access: "public",
-        contentType: file.type,
+        contentType: validation.mimeType!,
         addRandomSuffix: false,
       },
     );
@@ -154,7 +139,9 @@ export async function POST(
       imageUrl: blob.url,
       originalSize: file.size,
       optimizedSize: buffer.length,
-      contentType: file.type,
+      contentType: validation.mimeType,
+      width: validation.width,
+      height: validation.height,
     });
   } catch (error) {
     console.error(
