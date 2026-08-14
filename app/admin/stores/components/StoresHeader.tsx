@@ -15,7 +15,6 @@ export function StoresHeader({ onRefresh, onAdd }: Props) {
           <p className="mt-1 text-sm text-ink-soft">إدارة المتاجر وأصحابها والاشتراكات</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/admin/dashboard" className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink-soft transition hover:border-brand hover:text-ink">لوحة الإدارة</Link>
           <button type="button" onClick={onRefresh} className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink-soft transition hover:border-brand hover:text-ink">تحديث</button>
           <button type="button" onClick={onAdd} className="rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-dark">+ إضافة متجر</button>
         </div>

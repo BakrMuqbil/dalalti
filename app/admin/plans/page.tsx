@@ -67,7 +67,13 @@ export default function AdminPlansPage() {
   }
 
   return <main dir="rtl" className="min-h-screen bg-background text-ink">
-    <header className="border-b border-line bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8"><div><span className="text-xs font-medium text-gold">SUBSCRIPTIONS</span><h1 className="mt-1 text-2xl font-bold">إدارة الباقات</h1><p className="mt-1 text-sm text-ink-soft">تعديل الأسعار والفترات وحالة الباقات المستخدمة في اشتراكات المتاجر.</p></div><div className="flex gap-2"><Link href="/admin/dashboard" className="rounded-xl border border-line px-4 py-2 text-sm hover:bg-background">لوحة الإدارة</Link><Link href="/admin/stores" className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark">المتاجر</Link></div></div></header>
+    <header className="border-b border-line bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <span className="text-xs font-medium text-gold">SUBSCRIPTIONS</span>
+        <h1 className="mt-1 text-2xl font-bold">إدارة الباقات</h1>
+        <p className="mt-1 text-sm text-ink-soft">تعديل الأسعار والفترات وحالة الباقات المستخدمة في اشتراكات المتاجر.</p>
+      </div>
+    </header>
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {error && !loading && (
         <div className="mb-6">
