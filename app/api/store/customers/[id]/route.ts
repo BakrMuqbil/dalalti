@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { updateCustomerSchema } from "@/lib/validation";
@@ -35,8 +36,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (result.error) return result.error;
     return NextResponse.json({ success: true, customer: result.customer });
   } catch (error) {
-    console.error("Get customer error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحميل العميل" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -76,8 +76,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json({ success: true, message: "تم تحديث العميل", customer });
   } catch (error) {
-    console.error("Update customer error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحديث العميل" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -105,7 +104,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
     await prisma.customer.delete({ where: { id } });
     return NextResponse.json({ success: true, message: "تم حذف العميل" });
   } catch (error) {
-    console.error("Delete customer error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء حذف العميل" }, { status: 500 });
+    return handleApiError(error);
   }
 }

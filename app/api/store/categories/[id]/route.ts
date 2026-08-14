@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { updateCategorySchema } from "@/lib/validation";
@@ -129,11 +130,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       category: updatedCategory,
     });
   } catch (error) {
-    console.error("Update store category error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث التصنيف" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -189,10 +186,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
       message: "تم حذف التصنيف بنجاح",
     });
   } catch (error) {
-    console.error("Delete store category error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء حذف التصنيف" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

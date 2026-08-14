@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-auth";
 import { headers } from "next/headers";

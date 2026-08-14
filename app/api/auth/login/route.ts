@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { createAuthToken } from "@/lib/auth";
@@ -89,10 +90,6 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تسجيل الدخول" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

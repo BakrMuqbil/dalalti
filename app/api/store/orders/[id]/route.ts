@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { updateOrderSchema } from "@/lib/validation";
@@ -38,8 +39,7 @@ export async function GET(_request: Request, context: RouteContext) {
       order: { ...result.order, totalAmount: result.order.totalAmount.toString() },
     });
   } catch (error) {
-    console.error("Get order error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحميل الطلب" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -83,7 +83,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       order: { ...order, totalAmount: order.totalAmount.toString() },
     });
   } catch (error) {
-    console.error("Update order error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحديث الطلب" }, { status: 500 });
+    return handleApiError(error);
   }
 }

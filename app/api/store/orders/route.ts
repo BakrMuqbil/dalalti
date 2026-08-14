@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { createOrderSchema, orderQuerySchema } from "@/lib/validation";
@@ -77,11 +78,7 @@ export async function GET(request: Request) {
       })),
     });
   } catch (error) {
-    console.error("Get store orders error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل الطلبات" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

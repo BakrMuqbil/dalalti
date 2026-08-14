@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { createCustomerSchema, customerQuerySchema } from "@/lib/validation";
@@ -66,11 +67,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, customers });
   } catch (error) {
-    console.error("Get store customers error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل العملاء" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

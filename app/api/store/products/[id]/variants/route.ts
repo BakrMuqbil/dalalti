@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { createVariantSchema } from "@/lib/validation";
@@ -63,11 +64,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, variants });
   } catch (error) {
-    console.error("Get product variants error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل المتغيرات" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -142,10 +139,6 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error("Create product variant error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء إنشاء المتغير" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

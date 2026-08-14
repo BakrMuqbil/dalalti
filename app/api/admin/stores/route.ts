@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { requireAdmin } from "@/lib/require-auth";
@@ -55,11 +56,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error("Admin stores GET error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل المتاجر" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -194,10 +191,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Create store error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء إنشاء المتجر" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

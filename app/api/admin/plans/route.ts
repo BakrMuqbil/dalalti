@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-auth";
 import { headers } from "next/headers";
@@ -46,14 +47,6 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error("Admin plans error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء تحميل الباقات",
-      },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

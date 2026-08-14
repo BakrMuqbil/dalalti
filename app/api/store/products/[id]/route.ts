@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { updateProductSchema } from "@/lib/validation";
@@ -129,11 +130,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       product: updatedProduct,
     });
   } catch (error) {
-    console.error("Update store product error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث المنتج" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -184,10 +181,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
       message: "تم حذف المنتج بنجاح",
     });
   } catch (error) {
-    console.error("Delete store product error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء حذف المنتج" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

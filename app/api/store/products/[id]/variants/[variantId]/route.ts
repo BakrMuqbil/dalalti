@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { updateVariantSchema } from "@/lib/validation";
@@ -124,11 +125,7 @@ export async function PATCH(
       variant: updatedVariant,
     });
   } catch (error) {
-    console.error("Update product variant error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث المتغير" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -170,10 +167,6 @@ export async function DELETE(
       message: "تم حذف المتغير بنجاح",
     });
   } catch (error) {
-    console.error("Delete product variant error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء حذف المتغير" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

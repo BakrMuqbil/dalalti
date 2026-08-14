@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { createCategorySchema } from "@/lib/validation";
@@ -47,11 +48,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, categories });
   } catch (error) {
-    console.error("Get store categories error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل التصنيفات" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -131,10 +128,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Create store category error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء إنشاء التصنيف" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

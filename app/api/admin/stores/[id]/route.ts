@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { requireAdmin } from "@/lib/require-auth";
@@ -102,11 +103,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({ success: true, store: serializeStore(store) });
   } catch (error) {
-    console.error("Admin store details error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل تفاصيل المتجر" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -378,10 +375,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       store: updated ? serializeStore(updated) : null,
     });
   } catch (error) {
-    console.error("Admin update store error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث المتجر" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 
@@ -81,14 +82,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Auth me error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "حدث خطأ أثناء تحميل بيانات المستخدم",
-      },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

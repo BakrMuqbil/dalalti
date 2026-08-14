@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { createProductSchema, productQuerySchema } from "@/lib/validation";
@@ -100,11 +101,7 @@ export async function GET(request: Request) {
       pagination: { total, pages, page, limit },
     });
   } catch (error) {
-    console.error("Get store products error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل المنتجات" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -193,10 +190,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Create store product error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء إنشاء المنتج" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

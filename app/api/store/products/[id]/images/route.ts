@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { createProductImageSchema } from "@/lib/validation";
@@ -78,11 +79,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, images });
   } catch (error) {
-    console.error("Get product images error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحميل صور المنتج" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -148,10 +145,6 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error("Create product image error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء إضافة الصورة" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

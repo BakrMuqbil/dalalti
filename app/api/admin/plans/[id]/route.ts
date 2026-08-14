@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-auth";
 import { updatePlanSchema } from "@/lib/validation";
@@ -35,8 +36,7 @@ export async function GET(_request: Request, context: RouteContext) {
       },
     });
   } catch (error) {
-    console.error("Admin plan details error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحميل الباقة" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -81,8 +81,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       plan: { id: plan.id, name: plan.name, billingPeriod: plan.billingPeriod, price: plan.price.toString(), isActive: plan.isActive },
     });
   } catch (error) {
-    console.error("Admin update plan error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء تحديث الباقة" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -111,7 +110,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
     await prisma.plan.delete({ where: { id } });
     return NextResponse.json({ success: true, message: "تم حذف الباقة" });
   } catch (error) {
-    console.error("Admin delete plan error:", error);
-    return NextResponse.json({ success: false, message: "حدث خطأ أثناء حذف الباقة" }, { status: 500 });
+    return handleApiError(error);
   }
 }

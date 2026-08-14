@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { updateProductImageSchema } from "@/lib/validation";
@@ -136,11 +137,7 @@ export async function PATCH(
       image: updatedImage,
     });
   } catch (error) {
-    console.error("Update product image error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث صورة المنتج" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -203,10 +200,6 @@ export async function DELETE(
       message: "تم حذف صورة المنتج بنجاح",
     });
   } catch (error) {
-    console.error("Delete product image error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء حذف صورة المنتج" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

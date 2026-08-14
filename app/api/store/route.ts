@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { updateStoreSchema } from "@/lib/validation";
@@ -43,11 +44,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, store });
   } catch (error) {
-    console.error("Get store error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء جلب بيانات المتجر" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -111,10 +108,6 @@ export async function PATCH(request: Request) {
       store: updated,
     });
   } catch (error) {
-    console.error("Update store error:", error);
-    return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث المتجر" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
