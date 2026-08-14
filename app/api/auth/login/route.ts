@@ -6,6 +6,7 @@ import { createAuthToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { rateLimitCheck, getClientIp } from "@/lib/rate-limit";
+import { SECURE_COOKIE_OPTIONS, setCsrfCookie } from "@/lib/csrf";
 
 const LOGIN_RATE_LIMIT = {
   limit: 5,
@@ -81,12 +82,12 @@ export async function POST(request: Request) {
     });
 
     response.cookies.set("dalalti_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      ...SECURE_COOKIE_OPTIONS,
       maxAge: 60 * 60 * 24 * 7,
-      path: "/",
     });
+
+    // إضافة CSRF token للاستخدام المستقبلي
+    const csrfToken = setCsrfCookie(response);
 
     return response;
   } catch (error) {
