@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-auth";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 export async function GET() {
   const admin = await requireAdmin();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.adminRead);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!admin) {
     return NextResponse.json(

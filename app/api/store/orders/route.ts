@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { createOrderSchema, orderQuerySchema } from "@/lib/validation";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 async function getStore(userId: string) {
   return prisma.store.findUnique({
@@ -12,6 +14,10 @@ async function getStore(userId: string) {
 
 export async function GET(request: Request) {
   const auth = await requireStoreOwner();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.storeRead);
+  if (rateLimitResponse) return rateLimitResponse;
   if (!auth) {
     return NextResponse.json(
       { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },
@@ -81,6 +87,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const auth = await requireStoreOwner();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.storeWrite);
+  if (rateLimitResponse) return rateLimitResponse;
   if (!auth) {
     return NextResponse.json(
       { success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" },

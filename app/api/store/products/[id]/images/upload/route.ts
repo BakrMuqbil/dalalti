@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 type RouteContext = {
   params: Promise<{
@@ -26,6 +28,10 @@ export async function POST(
   context: RouteContext,
 ) {
   const auth = await requireStoreOwner();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.upload);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!auth) {
     return NextResponse.json(

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { del, put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -15,6 +17,10 @@ const ALLOWED_TYPES = new Set([
 
 export async function POST(request: Request) {
   const auth = await requireStoreOwner();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.upload);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!auth) {
     return NextResponse.json(

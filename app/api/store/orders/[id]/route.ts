@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
 import { updateOrderSchema } from "@/lib/validation";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -21,6 +23,10 @@ async function getOwnedOrder(userId: string, id: string) {
 
 export async function GET(_request: Request, context: RouteContext) {
   const auth = await requireStoreOwner();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.storeRead);
+  if (rateLimitResponse) return rateLimitResponse;
   if (!auth) return NextResponse.json({ success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" }, { status: 401 });
 
   try {
@@ -39,6 +45,10 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const auth = await requireStoreOwner();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.storeWrite);
+  if (rateLimitResponse) return rateLimitResponse;
   if (!auth) return NextResponse.json({ success: false, message: "غير مصرح لك بتنفيذ هذا الإجراء" }, { status: 401 });
 
   try {

@@ -3,9 +3,37 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { createAuthToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
+import { headers } from "next/headers";
+import { rateLimitCheck, getClientIp } from "@/lib/rate-limit";
+
+const LOGIN_RATE_LIMIT = {
+  limit: 5,
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  keyPrefix: "login" as const,
+};
 
 export async function POST(request: Request) {
   try {
+    // Rate Limiting: حسب IP
+    const reqHeaders = await headers();
+    const clientIp = getClientIp(reqHeaders);
+    const rateLimit = rateLimitCheck(clientIp, LOGIN_RATE_LIMIT);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "عدد محاولات تسجيل الدخول كبير. يرجى المحاولة لاحقاً.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfter ?? 900),
+          },
+        }
+      );
+    }
+
     const rawBody = await request.json();
     const parsed = loginSchema.safeParse(rawBody);
 

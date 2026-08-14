@@ -3,9 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { requireAdmin } from "@/lib/require-auth";
 import { adminCreateStoreSchema } from "@/lib/validation";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 export async function GET() {
   const admin = await requireAdmin();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.adminRead);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!admin) {
     return NextResponse.json(
@@ -59,6 +65,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const admin = await requireAdmin();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.adminWrite);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!admin) {
     return NextResponse.json(

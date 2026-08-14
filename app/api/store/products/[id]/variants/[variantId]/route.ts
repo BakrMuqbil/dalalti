@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
 import { updateVariantSchema } from "@/lib/validation";
+import { headers } from "next/headers";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
 type RouteContext = {
   params: Promise<{
@@ -38,6 +40,10 @@ export async function PATCH(
   context: RouteContext
 ) {
   const auth = await requireAuth();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.storeWrite);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!auth || auth.role !== "STORE_OWNER") {
     return NextResponse.json(
@@ -131,6 +137,10 @@ export async function DELETE(
   context: RouteContext
 ) {
   const auth = await requireAuth();
+
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.storeWrite);
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!auth || auth.role !== "STORE_OWNER") {
     return NextResponse.json(
