@@ -41,6 +41,13 @@ export type StoreForm = {
   planId: string;
 };
 
+export type Pagination = {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
 const emptyForm: StoreForm = {
   name: "",
   phone: "",
@@ -62,15 +69,41 @@ export function useAdminStores() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<StoreForm>(emptyForm);
 
+  // Pagination & Filtering
+  const [pagination, setPagination] = useState<Pagination>({
+    total: 0,
+    page: 1,
+    limit: 20,
+    pages: 0,
+  });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+
+  const buildQuery = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set("page", String(pagination.page));
+    params.set("limit", String(pagination.limit));
+    if (search) params.set("search", search);
+    if (statusFilter) params.set("status", statusFilter);
+    if (planFilter) params.set("planId", planFilter);
+    return params.toString();
+  }, [pagination.page, pagination.limit, search, statusFilter, planFilter]);
+
   const loadStores = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetchWithAuth("/api/admin/stores");
-      const data = await readJson(response, "فشل تحميل المتاجر");
+      const query = buildQuery();
+      const response = await fetchWithAuth(`/api/admin/stores?${query}`);
+      const data = await readJson<{ stores: Store[]; pagination: Pagination }>(
+        response,
+        "فشل تحميل المتاجر",
+      );
 
       setStores(data.stores);
+      setPagination(data.pagination);
     } catch (error) {
       console.error("Failed to load stores:", error);
       const msg = error instanceof Error ? error.message : "حدث خطأ أثناء تحميل المتاجر";
@@ -79,7 +112,7 @@ export function useAdminStores() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [buildQuery]);
 
   const loadPlans = useCallback(async () => {
     try {
@@ -108,8 +141,15 @@ export function useAdminStores() {
 
   useEffect(() => {
     void loadStores();
+  }, [loadStores]);
+
+  useEffect(() => {
     void loadPlans();
-  }, [loadStores, loadPlans]);
+  }, [loadPlans]);
+
+  function goToPage(page: number) {
+    setPagination((current) => ({ ...current, page }));
+  }
 
   function updateField(field: keyof StoreForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -153,15 +193,18 @@ export function useAdminStores() {
     }
   }
 
-  const requestStoreAction = useCallback(async (storeId: string, payload: Record<string, unknown>) => {
-    const response = await fetchWithAuth(`/api/admin/stores/${storeId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await readJson(response, "فشلت العملية");
-    return data;
-  }, []);
+  const requestStoreAction = useCallback(
+    async (storeId: string, payload: Record<string, unknown>) => {
+      const response = await fetchWithAuth(`/api/admin/stores/${storeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await readJson(response, "فشلت العملية");
+      return data;
+    },
+    [],
+  );
 
   return {
     stores,
@@ -173,6 +216,10 @@ export function useAdminStores() {
     creating,
     form,
     showAddStore,
+    pagination,
+    search,
+    statusFilter,
+    planFilter,
     updateField,
     loadStores,
     openAddStore,
@@ -180,5 +227,9 @@ export function useAdminStores() {
     handleCreateStore,
     setFormError,
     requestStoreAction,
+    goToPage,
+    setSearch,
+    setStatusFilter,
+    setPlanFilter,
   };
 }

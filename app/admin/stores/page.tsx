@@ -6,6 +6,8 @@ import { StoresHeader } from "./components/StoresHeader";
 import { StoresStats } from "./components/StoresStats";
 import { StoresTable } from "./components/StoresTable";
 import { StoreDetailsModal } from "./components/StoreDetailsModal";
+import { StoresFilters } from "./components/StoresFilters";
+import { StoresPagination } from "./components/StoresPagination";
 import { useAdminStores, type Store } from "./hooks/useAdminStores";
 import { useToast } from "@/hooks/useToast";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -29,6 +31,14 @@ export default function AdminStoresPage() {
     handleCreateStore,
     setFormError,
     requestStoreAction,
+    pagination,
+    search,
+    statusFilter,
+    planFilter,
+    goToPage,
+    setSearch,
+    setStatusFilter,
+    setPlanFilter,
   } = useAdminStores();
 
   const { showToast } = useToast();
@@ -68,7 +78,27 @@ export default function AdminStoresPage() {
         ) : (
           <>
             <StoresStats stores={stores} loading={loading} />
-            <StoresTable stores={stores} loading={loading} onDetails={(store) => setSelectedStore(store)} />
+
+            <div className="mt-6 rounded-2xl border border-line bg-surface p-5 shadow-sm">
+              <StoresFilters
+                search={search}
+                statusFilter={statusFilter}
+                planFilter={planFilter}
+                plans={plans}
+                pagination={pagination}
+                onSearchChange={setSearch}
+                onStatusChange={setStatusFilter}
+                onPlanChange={setPlanFilter}
+              />
+            </div>
+
+            <div className="mt-5">
+              <StoresTable stores={stores} loading={loading} onDetails={(store) => setSelectedStore(store)} />
+            </div>
+
+            <div className="mt-5">
+              <StoresPagination pagination={pagination} onPageChange={goToPage} />
+            </div>
           </>
         )}
 

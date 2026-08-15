@@ -7,7 +7,7 @@ import { adminCreateStoreSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await requireAdmin();
 
   const reqHeaders = await headers();
@@ -22,13 +22,45 @@ export async function GET() {
   }
 
   try {
-    const stores = await prisma.store.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        owner: { select: { id: true, name: true, phone: true, email: true } },
-        subscription: { include: { plan: true } },
-      },
-    });
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+    const search = searchParams.get("search")?.trim() || undefined;
+    const status = searchParams.get("status") || undefined;
+    const planId = searchParams.get("planId") || undefined;
+
+    const where: Record<string, unknown> = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { slug: { contains: search, mode: "insensitive" } },
+        { owner: { name: { contains: search, mode: "insensitive" } } },
+        { owner: { phone: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    if (planId) {
+      where.subscription = { planId };
+    }
+
+    const [total, stores] = await Promise.all([
+      prisma.store.count({ where }),
+      prisma.store.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          owner: { select: { id: true, name: true, phone: true, email: true } },
+          subscription: { include: { plan: true } },
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
@@ -54,6 +86,12 @@ export async function GET() {
             }
           : null,
       })),
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     return handleApiError(error);
