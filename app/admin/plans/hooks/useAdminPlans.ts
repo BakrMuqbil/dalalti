@@ -32,7 +32,8 @@ export function useAdminPlans() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState<PlanForm>(emptyForm);
-  const [editing, setEditing] = useState<Plan | null>(null);
+  const [formError, setFormError] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -63,9 +64,17 @@ export function useAdminPlans() {
     });
   }
 
+  function startAdd() {
+    setFormError("");
+    setForm(emptyForm);
+    setShowAdd(true);
+  }
+
   function reset() {
     setEditing(null);
+    setShowAdd(false);
     setForm(emptyForm);
+    setFormError("");
   }
 
   async function updatePlan(planId: string, payload: Record<string, unknown>) {
@@ -84,6 +93,28 @@ export function useAdminPlans() {
     }
   }
 
+  async function createPlan(payload: { name: string; billingPeriod: string; price: number }) {
+    setSaving(true);
+    setFormError("");
+    try {
+      const response = await fetchWithAuth("/api/admin/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await readJson(response, "فشل إنشاء الباقة");
+      reset();
+      await load();
+      return data;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "حدث خطأ";
+      setFormError(msg);
+      throw new Error(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function updateField(field: keyof PlanForm, value: string | boolean) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -93,12 +124,17 @@ export function useAdminPlans() {
     loading,
     saving,
     error,
+    formError,
     form,
     editing,
+    showAdd,
     load,
     startEdit,
+    startAdd,
     reset,
     updatePlan,
+    createPlan,
     updateField,
+    setFormError,
   };
 }

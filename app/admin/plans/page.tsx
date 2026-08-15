@@ -9,6 +9,7 @@ import { useAdminPlans } from "./hooks/useAdminPlans";
 import { PlansHeader } from "./components/PlansHeader";
 import { PlanCard } from "./components/PlanCard";
 import { EditPlanModal } from "./components/EditPlanModal";
+import { AddPlanModal } from "./components/AddPlanModal";
 
 export default function AdminPlansPage() {
   const {
@@ -16,12 +17,16 @@ export default function AdminPlansPage() {
     loading,
     saving,
     error,
+    formError,
     form,
     editing,
+    showAdd,
     load,
     startEdit,
+    startAdd,
     reset,
     updatePlan,
+    createPlan,
     updateField,
   } = useAdminPlans();
 
@@ -48,9 +53,23 @@ export default function AdminPlansPage() {
     await load();
   }
 
+  async function handleCreate(e: FormEvent) {
+    e.preventDefault();
+    try {
+      const data = await createPlan({
+        name: form.name,
+        billingPeriod: form.billingPeriod,
+        price: Number(form.price),
+      });
+      showToast(data.message || "تم إنشاء الباقة بنجاح", "success");
+    } catch {
+      // error already set in hook
+    }
+  }
+
   return (
     <main dir="rtl" className="min-h-screen bg-background text-ink">
-      <PlansHeader />
+      <PlansHeader onRefresh={load} onAdd={startAdd} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {error && !loading && (
@@ -110,6 +129,16 @@ export default function AdminPlansPage() {
             onFieldChange={updateField}
           />
         )}
+
+        <AddPlanModal
+          open={showAdd}
+          creating={saving}
+          form={{ name: form.name, billingPeriod: form.billingPeriod, price: form.price }}
+          formError={formError}
+          onClose={reset}
+          onSubmit={handleCreate}
+          onChange={updateField}
+        />
       </div>
     </main>
   );
