@@ -11,15 +11,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand text-white hover:bg-brand-deep disabled:hover:bg-brand",
+    "bg-brand text-white hover:bg-brand-deep disabled:hover:bg-brand focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   secondary:
-    "bg-transparent text-ink border border-line hover:border-brand disabled:hover:border-line",
+    "bg-transparent text-ink border border-line hover:border-brand disabled:hover:border-line focus-visible:ring-2 focus-visible:ring-gold/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   ghost:
-    "bg-transparent text-ink-soft hover:bg-surface hover:text-ink",
+    "bg-transparent text-ink-soft hover:bg-surface hover:text-ink focus-visible:ring-2 focus-visible:ring-gold/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   whatsapp:
-    "bg-whatsapp text-white hover:bg-whatsapp-deep disabled:hover:bg-whatsapp",
+    "bg-whatsapp text-white hover:bg-whatsapp-deep disabled:hover:bg-whatsapp focus-visible:ring-2 focus-visible:ring-whatsapp/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   danger:
-    "bg-transparent text-danger border border-danger/30 hover:bg-danger-bg disabled:hover:bg-transparent",
+    "bg-transparent text-danger border border-danger/30 hover:bg-danger-bg disabled:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-danger/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
