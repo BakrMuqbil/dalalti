@@ -13,3 +13,19 @@ export type AdminStats = {
   totalCustomers: number;
   totalOrders: number;
 };
+
+export type StoreGrowthPoint = {
+  month: string;
+  stores: number;
+};
+
+export type SubscriptionDistribution = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+export type DashboardCharts = {
+  storeGrowth: StoreGrowthPoint[];
+  subscriptionDistribution: SubscriptionDistribution[];
+};

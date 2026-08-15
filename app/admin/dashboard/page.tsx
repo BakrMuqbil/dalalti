@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 import { useAdminDashboard } from "./hooks/useAdminDashboard";
 import { AdminHero } from "./components/AdminHero";
 import { AdminStat } from "./components/AdminStat";
+import { StoresGrowthChart } from "./components/StoresGrowthChart";
+import { SubscriptionsPieChart } from "./components/SubscriptionsPieChart";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/feedback/Spinner";
 import { useToast } from "@/hooks/useToast";
@@ -54,7 +56,7 @@ function ManagementCard({
 }
 
 export default function AdminDashboardPage() {
-  const { stats, loading, error, reload } = useAdminDashboard();
+  const { stats, charts, loading, error, reload } = useAdminDashboard();
   const { showToast } = useToast();
 
   async function handleReload() {
@@ -162,6 +164,42 @@ export default function AdminDashboardPage() {
                   tone="ink"
                   icon={<ReceiptIcon width={19} height={19} />}
                 />
+              </div>
+            </section>
+
+            <section className="mt-8 grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
+                <div className="mb-4">
+                  <span className="text-[11px] font-bold tracking-[0.14em] text-gold">
+                    GROWTH
+                  </span>
+                  <h2 className="mt-1 font-display text-lg font-bold text-ink">
+                    نمو المتاجر
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    عدد المتاجر المسجلة خلال آخر 6 أشهر
+                  </p>
+                </div>
+                {charts && <StoresGrowthChart data={charts.storeGrowth} />}
+              </div>
+
+              <div className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
+                <div className="mb-4">
+                  <span className="text-[11px] font-bold tracking-[0.14em] text-gold">
+                    DISTRIBUTION
+                  </span>
+                  <h2 className="mt-1 font-display text-lg font-bold text-ink">
+                    توزيع الاشتراكات
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    حالة الاشتراكات النشطة والمنتهية والملغاة
+                  </p>
+                </div>
+                {charts && (
+                  <SubscriptionsPieChart
+                    data={charts.subscriptionDistribution}
+                  />
+                )}
               </div>
             </section>
 

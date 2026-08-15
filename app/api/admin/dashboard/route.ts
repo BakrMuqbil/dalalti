@@ -59,6 +59,29 @@ export async function GET() {
       prisma.order.count(),
     ]);
 
+    // بيانات الرسوم البيانية — نمو المتاجر خلال آخر 6 أشهر
+    const sixMonthsAgo = new Date(now);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const storesByMonth: { month: string; stores: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleDateString("ar-SA", { month: "short" });
+      const count = await prisma.store.count({
+        where: { createdAt: { lte: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59) } },
+      });
+      storesByMonth.push({ month: label, stores: count });
+    }
+
+    // توزيع الاشتراكات حسب الحالة
+    const subscriptionDistribution = [
+      { name: "نشط", value: activeSubscriptions, color: "#16a34a" },
+      { name: "منتهي", value: expiredSubscriptions, color: "#dc2626" },
+      { name: "ملغى", value: cancelledSubscriptions, color: "#9ca3af" },
+    ].filter((item) => item.value > 0);
+
     return NextResponse.json({
       success: true,
       stats: {
@@ -75,6 +98,10 @@ export async function GET() {
         totalProducts,
         totalCustomers,
         totalOrders,
+      },
+      charts: {
+        storeGrowth: storesByMonth,
+        subscriptionDistribution,
       },
     });
   } catch (error) {

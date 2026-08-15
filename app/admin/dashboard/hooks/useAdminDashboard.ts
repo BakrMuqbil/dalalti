@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { readJson, fetchWithAuth } from "@/lib/api-client";
-import { AdminStats } from "../types";
+import { AdminStats, DashboardCharts } from "../types";
 
 export function useAdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [charts, setCharts] = useState<DashboardCharts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -15,9 +16,13 @@ export function useAdminDashboard() {
       setError("");
 
       const response = await fetchWithAuth("/api/admin/dashboard");
-      const data = await readJson<{ stats: AdminStats }>(response, "فشل تحميل بيانات لوحة الإدارة");
+      const data = await readJson<{ stats: AdminStats; charts: DashboardCharts }>(
+        response,
+        "فشل تحميل بيانات لوحة الإدارة",
+      );
 
       setStats(data.stats);
+      setCharts(data.charts);
     } catch (err) {
       console.error("Load admin dashboard failed:", err);
       const msg =
@@ -33,5 +38,5 @@ export function useAdminDashboard() {
     void load();
   }, [load]);
 
-  return { stats, loading, error, reload: load };
+  return { stats, charts, loading, error, reload: load };
 }
