@@ -19,7 +19,7 @@ import {
   UsersIcon,
   BoxIcon,
   ReceiptIcon,
-  ArrowLeftIcon,
+  ArrowRightIcon,
   PackageCheckIcon,
 } from "@/components/icons";
 
@@ -48,10 +48,10 @@ function ManagementCard({
           <div className="mt-1 text-xs leading-5 text-ink-soft">{description}</div>
         </div>
       </div>
-      <ArrowLeftIcon
+      <ArrowRightIcon
         width={17}
         height={17}
-        className="shrink-0 text-ink-soft transition-transform group-hover:-translate-x-1 group-hover:text-brand"
+        className="shrink-0 text-ink-soft transition-transform group-hover:translate-x-1 group-hover:text-brand"
       />
     </Link>
   );

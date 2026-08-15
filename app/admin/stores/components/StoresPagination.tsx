@@ -69,7 +69,7 @@ export function StoresPagination({
           type="button"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-          className="rounded-lg border border-line px-3 py-2 text-sm transition hover:bg-background disabled:opacity-40 disabled:hover:bg-transparent"
+          className="rounded-lg border border-line px-3 py-2 text-sm transition hover:bg-background disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           السابق
         </button>
@@ -87,7 +87,7 @@ export function StoresPagination({
               key={num}
               type="button"
               onClick={() => onPageChange(num as number)}
-              className={`min-w-[2.5rem] rounded-lg px-3 py-2 text-sm font-medium transition ${
+              className={`min-w-[2.5rem] rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                 num === page
                   ? "bg-brand text-white"
                   : "border border-line hover:bg-background"
@@ -102,7 +102,7 @@ export function StoresPagination({
           type="button"
           disabled={page >= pages}
           onClick={() => onPageChange(page + 1)}
-          className="rounded-lg border border-line px-3 py-2 text-sm transition hover:bg-background disabled:opacity-40 disabled:hover:bg-transparent"
+          className="rounded-lg border border-line px-3 py-2 text-sm transition hover:bg-background disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           التالي
         </button>

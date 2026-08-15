@@ -144,6 +144,14 @@ export function ArrowLeftIcon(props: IconProps) {
   );
 }
 
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
+
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

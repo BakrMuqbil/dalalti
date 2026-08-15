@@ -27,10 +27,11 @@ export function StoresFilters({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <div className="flex-1">
-        <label className="mb-1.5 block text-xs font-medium text-ink-soft">
+        <label htmlFor="store-search" className="mb-1.5 block text-xs font-medium text-ink-soft">
           البحث
         </label>
         <input
+          id="store-search"
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -40,10 +41,11 @@ export function StoresFilters({
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink-soft">
+        <label htmlFor="store-status" className="mb-1.5 block text-xs font-medium text-ink-soft">
           الحالة
         </label>
         <select
+          id="store-status"
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value)}
           className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm outline-none transition focus:border-gold sm:w-36"
@@ -55,10 +57,11 @@ export function StoresFilters({
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink-soft">
+        <label htmlFor="store-plan" className="mb-1.5 block text-xs font-medium text-ink-soft">
           الباقة
         </label>
         <select
+          id="store-plan"
           value={planFilter}
           onChange={(e) => onPlanChange(e.target.value)}
           className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm outline-none transition focus:border-gold sm:w-44"

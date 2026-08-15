@@ -69,7 +69,7 @@ export function AdminHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                   active
                     ? "bg-brand text-white"
                     : "text-ink-soft hover:bg-background hover:text-ink"
@@ -86,7 +86,7 @@ export function AdminHeader() {
             type="button"
             onClick={handleLogout}
             disabled={loggingOut}
-            className="rounded-xl border border-line bg-surface px-3 py-2 text-xs font-bold text-ink-soft transition hover:bg-background hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-line bg-surface px-3 py-2 text-xs font-bold text-ink-soft transition hover:bg-background hover:text-danger disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {loggingOut ? "جاري الخروج..." : "تسجيل الخروج"}
           </button>
