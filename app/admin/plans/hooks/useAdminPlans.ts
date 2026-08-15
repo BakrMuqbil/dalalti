@@ -32,6 +32,7 @@ export function useAdminPlans() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState<PlanForm>(emptyForm);
+  const [editing, setEditing] = useState<Plan | null>(null);
   const [formError, setFormError] = useState("");
   const [showAdd, setShowAdd] = useState(false);
 
