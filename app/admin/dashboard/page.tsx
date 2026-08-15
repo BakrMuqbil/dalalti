@@ -4,10 +4,12 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useAdminDashboard } from "./hooks/useAdminDashboard";
 import { AdminHero } from "./components/AdminHero";
-import { AdminStat } from "./components/AdminStat";
+import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { StoresGrowthChart } from "./components/StoresGrowthChart";
 import { SubscriptionsPieChart } from "./components/SubscriptionsPieChart";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/feedback/Spinner";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -77,13 +79,15 @@ export default function AdminDashboardPage() {
             title="تعذر تحميل البيانات"
             description={error}
             action={
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={() => void handleReload()}
-                className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-deep"
+                className="px-5 font-bold hover:bg-brand-deep"
               >
                 إعادة المحاولة
-              </button>
+              </Button>
             }
           />
         </div>
@@ -93,6 +97,11 @@ export default function AdminDashboardPage() {
 
   return (
     <main dir="rtl" className="min-h-screen bg-background">
+      <PageHeader
+        label="DALALTI · ADMIN"
+        title="لوحة الإدارة"
+        description="نظرة عامة على المنصة والمؤشرات الرئيسية"
+      />
       <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
         {loading ? (
           <Spinner label="جاري تحميل بيانات لوحة الإدارة..." />
@@ -101,7 +110,7 @@ export default function AdminDashboardPage() {
             <AdminHero stats={stats} />
 
             <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <AdminStat
+              <StatCard
                 label="اشتراكات تنتهي قريبًا"
                 value={stats?.expiringSubscriptions ?? 0}
                 hint="خلال 7 أيام القادمة"
@@ -110,7 +119,7 @@ export default function AdminDashboardPage() {
                 href="/admin/stores"
                 icon={<AlertTriangleIcon width={19} height={19} />}
               />
-              <AdminStat
+              <StatCard
                 label="متاجر موقوفة"
                 value={stats?.suspendedStores ?? 0}
                 hint="تحتاج مراجعة"
@@ -118,14 +127,14 @@ export default function AdminDashboardPage() {
                 href="/admin/stores"
                 icon={<StoreIcon width={19} height={19} />}
               />
-              <AdminStat
+              <StatCard
                 label="اشتراكات نشطة"
                 value={stats?.activeSubscriptions ?? 0}
                 hint={`${stats?.monthlySubscriptions ?? 0} شهري · ${stats?.yearlySubscriptions ?? 0} سنوي`}
                 tone="success"
                 icon={<CrownIcon width={19} height={19} />}
               />
-              <AdminStat
+              <StatCard
                 label="إجمالي المتاجر"
                 value={stats?.totalStores ?? 0}
                 hint={`${stats?.activeStores ?? 0} نشط`}
@@ -144,20 +153,20 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <AdminStat
+                <StatCard
                   label="أصحاب المتاجر"
                   value={stats?.totalOwners ?? 0}
                   tone="ink"
                   icon={<UsersIcon width={19} height={19} />}
                 />
-                <AdminStat
+                <StatCard
                   label="إجمالي المنتجات"
                   value={stats?.totalProducts ?? 0}
                   hint="عبر كل المتاجر"
                   tone="ink"
                   icon={<BoxIcon width={19} height={19} />}
                 />
-                <AdminStat
+                <StatCard
                   label="إجمالي الطلبات"
                   value={stats?.totalOrders ?? 0}
                   hint={`${stats?.totalCustomers ?? 0} عميل مسجّل`}

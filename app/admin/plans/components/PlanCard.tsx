@@ -1,5 +1,7 @@
 "use client";
 
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Plan } from "../hooks/useAdminPlans";
 
 interface PlanCardProps {
@@ -21,20 +23,14 @@ export function PlanCard({ plan, saving, onEdit, onToggle }: PlanCardProps) {
             {plan.billingPeriod === "MONTHLY" ? "اشتراك شهري" : "اشتراك سنوي"}
           </p>
         </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            isActive
-              ? "bg-success-bg text-success"
-              : "bg-surface-alt text-ink-soft"
-          }`}
-        >
+        <Badge tone={isActive ? "success" : "neutral"} className="px-3 py-1 text-xs font-semibold">
           {isActive ? "فعالة" : "معطلة"}
-        </span>
+        </Badge>
       </div>
 
       <p className="mt-6 font-mono text-3xl font-semibold">
         {plan.price}
-        <span className="mr-2 text-sm font-normal text-ink-soft">ريال</span>
+        <span className="ms-2 text-sm font-normal text-ink-soft">ريال</span>
       </p>
 
       <div className="mt-4 text-xs text-ink-soft">
@@ -42,22 +38,26 @@ export function PlanCard({ plan, saving, onEdit, onToggle }: PlanCardProps) {
       </div>
 
       <div className="mt-5 flex gap-2">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           disabled={saving}
           onClick={() => onEdit(plan)}
-          className="flex-1 rounded-xl border border-line px-3 py-2 text-sm hover:border-gold"
+          className="flex-1 hover:border-gold"
         >
           تعديل
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           disabled={saving}
           onClick={() => onToggle(plan)}
-          className="rounded-xl border border-line px-3 py-2 text-sm hover:border-gold"
+          className="hover:border-gold"
         >
           {isActive ? "تعطيل" : "تفعيل"}
-        </button>
+        </Button>
       </div>
     </article>
   );

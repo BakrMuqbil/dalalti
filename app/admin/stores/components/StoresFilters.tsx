@@ -35,7 +35,7 @@ export function StoresFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="اسم المتجر، الرابط، المالك، الهاتف..."
-          className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none transition focus:border-gold"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm outline-none transition focus:border-gold"
         />
       </div>
 
@@ -46,7 +46,7 @@ export function StoresFilters({
         <select
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value)}
-          className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none transition focus:border-gold sm:w-36"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm outline-none transition focus:border-gold sm:w-36"
         >
           <option value="">الكل</option>
           <option value="ACTIVE">نشط</option>
@@ -61,7 +61,7 @@ export function StoresFilters({
         <select
           value={planFilter}
           onChange={(e) => onPlanChange(e.target.value)}
-          className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none transition focus:border-gold sm:w-44"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm outline-none transition focus:border-gold sm:w-44"
         >
           <option value="">الكل</option>
           {plans.map((plan) => (

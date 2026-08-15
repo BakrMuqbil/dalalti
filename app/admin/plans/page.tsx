@@ -10,6 +10,7 @@ import { PlansHeader } from "./components/PlansHeader";
 import { PlanCard } from "./components/PlanCard";
 import { EditPlanModal } from "./components/EditPlanModal";
 import { AddPlanModal } from "./components/AddPlanModal";
+import { Button } from "@/components/ui/Button";
 
 export default function AdminPlansPage() {
   const {
@@ -81,13 +82,15 @@ export default function AdminPlansPage() {
               title="تعذر تحميل الباقات"
               description={error}
               action={
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  size="md"
                   onClick={() => void load()}
-                  className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-deep"
+                  className="px-5 font-bold hover:bg-brand-deep"
                 >
                   إعادة المحاولة
-                </button>
+                </Button>
               }
             />
           </div>
