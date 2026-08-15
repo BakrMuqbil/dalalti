@@ -131,7 +131,6 @@ export function StoreDetailsModal({ open, store, plans, onClose, onRefresh, onRe
             </div>
           </>}
         </div>
-      </div>
     </Modal>
   );
 }
