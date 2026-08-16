@@ -20,6 +20,23 @@ export const metadata: Metadata = {
   title: "دلالتي — منصة الدلالات في عدن",
   description:
     "متجرك الخاص برابط واحد، مع تكامل مباشر مع واتساب لإدارة منتجاتك وطلباتك.",
+  metadataBase: new URL("https://dalalti.com"),
+  openGraph: {
+    title: "دلالتي — منصة الدلالات في عدن",
+    description: "متجرك الخاص برابط واحد، مع تكامل مباشر مع واتساب لإدارة منتجاتك وطلباتك.",
+    siteName: "دلالتي",
+    locale: "ar_YE",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "دلالتي — منصة الدلالات في عدن",
+    description: "متجرك الخاص برابط واحد، مع تكامل مباشر مع واتساب لإدارة منتجاتك وطلباتك.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
