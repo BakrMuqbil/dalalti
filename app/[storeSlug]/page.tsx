@@ -150,7 +150,6 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
           storeSlug={store.slug}
           logoUrl={store.logoUrl}
           phone={store.phone}
-          onSearch={() => {}}
         />
         <StoreHero storeName={store.name} description={store.description} />
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
