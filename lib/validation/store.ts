@@ -102,7 +102,20 @@ export const orderQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
-/* ── Variant ── */
+/* ── Public Order (Customer Checkout) ── */
+export const publicOrderItemSchema = z.object({
+  productId: z.string().cuid(),
+  variantId: z.string().cuid().nullable().default(null),
+  quantity: z.number().int().min(1).max(1000),
+});
+
+export const publicCreateOrderSchema = z.object({
+  customerName: z.string().min(1).max(200),
+  customerPhone: z.string().min(1).max(20),
+  customerAddress: z.string().max(500).transform((v) => v.trim() || null).nullable().optional(),
+  notes: z.string().max(2000).transform((v) => v.trim() || null).nullable().optional(),
+  items: z.array(publicOrderItemSchema).min(1, "عناصر الطلب مطلوبة"),
+});
 export const createVariantSchema = z.object({
   color: z.string().max(100).transform((v) => v.trim() || null).nullable().default(null),
   size: z.string().max(100).transform((v) => v.trim() || null).nullable().default(null),

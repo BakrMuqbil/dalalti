@@ -180,6 +180,10 @@ export const rateLimitPresets = {
   storeWrite: { limit: 60, windowMs: 60 * 1000, keyPrefix: "store" as const },
   /** رفع الملفات: 20 طلب / دقيقة */
   upload: { limit: 20, windowMs: 60 * 1000, keyPrefix: "upload" as const },
+  /** Public APIs — قراءة: 30 طلب / دقيقة */
+  publicRead: { limit: 30, windowMs: 60 * 1000, keyPrefix: "public" as const },
+  /** Public APIs — إنشاء طلب: 5 طلبات / ساعة */
+  publicOrder: { limit: 5, windowMs: 60 * 60 * 1000, keyPrefix: "order" as const },
 };
 
 /**
