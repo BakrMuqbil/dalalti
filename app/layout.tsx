@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 
 const plexSansArabic = IBM_Plex_Sans_Arabic({
   variable: "--font-plex-arabic",
@@ -51,7 +52,9 @@ export default function RootLayout({
       className={`${plexSansArabic.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-ink font-body">
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
