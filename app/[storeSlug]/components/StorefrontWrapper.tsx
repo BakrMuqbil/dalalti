@@ -1,0 +1,1 @@
+'use client' ; import { ReactNode } from 'react' ; import { CartProvider } from './CartProvider' ; import { CartDrawer } from './CartDrawer' ; type Props = { storeSlug: string ; children: ReactNode ; } ; export function StorefrontWrapper({ storeSlug, children }: Props) { return ( <CartProvider storeSlug={storeSlug}> {children} <CartDrawer /> </CartProvider> ) ; }
