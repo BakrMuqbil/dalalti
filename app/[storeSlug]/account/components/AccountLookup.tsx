@@ -1,1 +1,103 @@
-'use client' ; import { useState } from 'react' ; import { Input } from '@/components/ui/Input' ; import { Button } from '@/components/ui/Button' ; import { EmptyState } from '@/components/ui/EmptyState' ; import { ArrowLeftIcon, UsersIcon, ReceiptIcon } from '@/components/icons' ; import Link from 'next/link' ; import { useRouter } from 'next/navigation' ; type Props = { storeSlug: string ; storeName: string ; } ; export function AccountLookup({ storeSlug, storeName }: Props) { const [phone, setPhone] = useState('') ; const [isLoading, setIsLoading] = useState(false) ; const [error, setError] = useState<string | null>(null) ; const router = useRouter() ; const handleSubmit = async (e: React.FormEvent) => { e.preventDefault() ; setError(null) ; if (!phone.trim()) { setError('رقم الهاتف مطلوب') ; return ; } setIsLoading(true) ; try { const response = await fetch(`/api/public/stores/${storeSlug}/orders?phone=${encodeURIComponent(phone)}`) ; const data = await response.json() ; if (!response.ok || !data.success) { throw new Error(data.message || 'حدث خطأ') ; } // Store phone in sessionStorage for orders page sessionStorage.setItem(`dalalti-account-${storeSlug}`, phone) ; router.push(`/${storeSlug}/account/orders`) ; } catch (err) { setError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع') ; } finally { setIsLoading(false) ; } } ; return ( <div className='mx-auto w-full max-w-md'> <nav className='mb-8' aria-label='التنقل'> <Link href={`/${storeSlug}`} className='inline-flex items-center gap-2 text-sm text-ink-soft transition-colors hover:text-brand' > <ArrowLeftIcon className='h-4 w-4' aria-hidden /> <span>العودة للمتجر</span> </Link> </nav> <div className='text-center mb-8'> <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-soft/30'> <UsersIcon className='h-8 w-8 text-brand' /> </div> <h1 className='font-display text-2xl font-bold text-ink'>حسابي</h1> <p className='mt-2 text-sm text-ink-soft'>أدخلي رقم هاتفك لمشاهدة طلباتك في {storeName}</p> </div> {error && ( <div className='mb-4 rounded-xl border border-danger bg-danger-bg p-4 text-sm text-danger'> {error} </div> )} <form onSubmit={handleSubmit} className='space-y-4'> <Input label='رقم الهاتف' value={phone} onChange={(e) => setPhone(e.target.value)} placeholder='مثال: 967700000000' required /> <Button type='submit' variant='primary' size='lg' className='w-full' disabled={isLoading} > {isLoading ? 'جاري البحث...' : 'عرض الطلبات'} </Button> </form> </div> ) ; }
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ArrowLeftIcon, UsersIcon, ReceiptIcon } from '@/components/icons';
+
+type Props = {
+  storeSlug: string;
+  storeName: string;
+};
+
+export function AccountLookup({ storeSlug, storeName }: Props) {
+  const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!phone.trim()) {
+      setError('رقم الهاتف مطلوب');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(
+        `/api/public/stores/${storeSlug}/orders?phone=${encodeURIComponent(phone)}`
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'حدث خطأ');
+      }
+
+      // Store phone in sessionStorage for orders page
+      sessionStorage.setItem(`dalalti-account-${storeSlug}`, phone);
+      router.push(`/${storeSlug}/account/orders`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-md">
+      <nav className="mb-8" aria-label="التنقل">
+        <Link
+          href={`/${storeSlug}`}
+          className="inline-flex items-center gap-2 text-sm text-ink-soft transition-colors hover:text-brand"
+        >
+          <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+          <span>العودة للمتجر</span>
+        </Link>
+      </nav>
+
+      <div className="mb-8 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-soft/30">
+          <UsersIcon className="h-8 w-8 text-brand" />
+        </div>
+        <h1 className="font-display text-2xl font-bold text-ink">حسابي</h1>
+        <p className="mt-2 text-sm text-ink-soft">
+          أدخلي رقم هاتفك لمشاهدة طلباتك في {storeName}
+        </p>
+      </div>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-danger bg-danger-bg p-4 text-sm text-danger">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="رقم الهاتف"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="مثال: 967700000000"
+          required
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? 'جاري البحث...' : 'عرض الطلبات'}
+        </Button>
+      </form>
+    </div>
+  );
+}

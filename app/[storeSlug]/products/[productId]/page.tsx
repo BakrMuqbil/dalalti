@@ -1,1 +1,186 @@
-import type { Metadata } from 'next' ; import { notFound } from 'next/navigation' ; import { prisma } from '@/lib/prisma' ; import { buildProductMetadata, buildProductJsonLd } from '@/lib/metadata' ; import { StoreHeader } from '../../components/StoreHeader' ; import { StoreFooter } from '../../components/StoreFooter' ; import { ArrowLeftIcon } from '@/components/icons' ; import Link from 'next/link' ; import { ImageGallery } from './components/ImageGallery' ; import { ShareButton } from './components/ShareButton' ; import { ProductActions } from '../../components/ProductActions' ; import { StorefrontWrapper } from '../../components/StorefrontWrapper' ; export const dynamic = 'force-dynamic' ; type Props = { params: Promise<{ storeSlug: string ; productId: string }> ; } ; export async function generateMetadata({ params }: Props): Promise<Metadata> { const { storeSlug, productId } = await params ; const store = await prisma.store.findUnique({ where: { slug: storeSlug, status: 'ACTIVE' }, select: { name: true }, }) ; const product = await prisma.product.findFirst({ where: { id: productId, store: { slug: storeSlug, status: 'ACTIVE' } }, select: { name: true, description: true, price: true, availability: true, images: { select: { imageUrl: true, isPrimary: true }, take: 1 }, }, }) ; if (!store || !product) { return { title: 'المنتج غير موجود | دلالتي', robots: { index: false, follow: false }, } ; } const primaryImage = product.images.find((img) => img.isPrimary) ?? product.images[0] ; return buildProductMetadata({ productName: product.name, description: product.description, imageUrl: primaryImage?.imageUrl ?? null, price: product.price, storeName: store.name, storeSlug, productId, availability: product.availability, }) ; } export default async function ProductDetailPage({ params }: Props) { const { storeSlug, productId } = await params ; const store = await prisma.store.findUnique({ where: { slug: storeSlug, status: 'ACTIVE' }, select: { id: true, name: true, slug: true, logoUrl: true, phone: true, description: true }, }) ; if (!store) { notFound() ; } const product = await prisma.product.findFirst({ where: { id: productId, storeId: store.id, status: 'ACTIVE' }, select: { id: true, name: true, description: true, price: true, availability: true, images: { orderBy: [ { isPrimary: 'desc' }, { sortOrder: 'asc' }, ], select: { id: true, imageUrl: true, isPrimary: true }, }, variants: { select: { id: true, color: true, size: true, price: true, availability: true }, }, category: { select: { id: true, name: true }, }, }, }) ; if (!product) { notFound() ; } const primaryImage = product.images.find((img) => img.isPrimary) ?? product.images[0] ; const imageUrl = primaryImage?.imageUrl ?? null ; const jsonLd = buildProductJsonLd({ productName: product.name, description: product.description, imageUrl, price: product.price, storeName: store.name, storeSlug, productId: product.id, availability: product.availability, categoryName: product.category?.name, }) ; return ( <StorefrontWrapper storeSlug={store.slug}> <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} /> <div className='flex min-h-screen flex-col bg-background'> <StoreHeader storeName={store.name} storeSlug={store.slug} logoUrl={store.logoUrl} phone={store.phone} onSearch={() => {}} /> <main className='mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8'> <nav className='mb-6' aria-label='التنقل'> <Link href={`/${storeSlug}`} className='inline-flex items-center gap-2 text-sm text-ink-soft transition-colors hover:text-brand' > <ArrowLeftIcon className='h-4 w-4' aria-hidden /> <span>العودة للمتجر</span> </Link> </nav> <article className='grid gap-8 lg:grid-cols-2'> <ImageGallery images={product.images} productName={product.name} /> <div className='flex flex-col'> {product.category && ( <p className='mb-2 text-sm font-medium text-gold'>{product.category.name}</p> )} <div className='flex items-start justify-between gap-4'> <h1 className='font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl'> {product.name} </h1> <ShareButton productName={product.name} description={product.description} /> </div> {product.description && ( <p className='mt-4 text-base leading-relaxed text-ink-soft'> {product.description} </p> )} <div className='mt-6'> <ProductActions productId={product.id} name={product.name} price={product.price} availability={product.availability} imageUrl={imageUrl} storeSlug={storeSlug} variants={product.variants} /> </div> </div> </article> </main> <StoreFooter storeName={store.name} /> </div> </StorefrontWrapper> ) ; }
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { buildProductMetadata, buildProductJsonLd } from "@/lib/metadata";
+import { StoreHeader } from "../../components/StoreHeader";
+import { StoreFooter } from "../../components/StoreFooter";
+import { ArrowLeftIcon } from "@/components/icons";
+import Link from "next/link";
+import { ImageGallery } from "./components/ImageGallery";
+import { ShareButton } from "./components/ShareButton";
+import { ProductActions } from "../../components/ProductActions";
+import { StorefrontWrapper } from "../../components/StorefrontWrapper";
+import { Link, json } from 'react-router-dom';
+export const dynamic = "force-dynamic";
+type Props = { params: Promise<{ storeSlug: string; productId: string }> };
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { storeSlug, productId } = await params;
+  const store = await prisma.store.findUnique({
+    where: { slug: storeSlug, status: "ACTIVE" },
+    select: { name: true },
+  });
+  const product = await prisma.product.findFirst({
+    where: { id: productId, store: { slug: storeSlug, status: "ACTIVE" } },
+    select: {
+      name: true,
+      description: true,
+      price: true,
+      availability: true,
+      images: { select: { imageUrl: true, isPrimary: true }, take: 1 },
+    },
+  });
+  if (!store || !product) {
+    return {
+      title: "المنتج غير موجود | دلالتي",
+      robots: { index: false, follow: false },
+    };
+  }
+  const primaryImage =
+    product.images.find((img) => img.isPrimary) ?? product.images[0];
+  return buildProductMetadata({
+    productName: product.name,
+    description: product.description,
+    imageUrl: primaryImage?.imageUrl ?? null,
+    price: product.price,
+    storeName: store.name,
+    storeSlug,
+    productId,
+    availability: product.availability,
+  });
+}
+export default async function ProductDetailPage({ params }: Props) {
+  const { storeSlug, productId } = await params;
+  const store = await prisma.store.findUnique({
+    where: { slug: storeSlug, status: "ACTIVE" },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      logoUrl: true,
+      phone: true,
+      description: true,
+    },
+  });
+  if (!store) {
+    notFound();
+  }
+  const product = await prisma.product.findFirst({
+    where: { id: productId, storeId: store.id, status: "ACTIVE" },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      availability: true,
+      images: {
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+        select: { id: true, imageUrl: true, isPrimary: true },
+      },
+      variants: {
+        select: {
+          id: true,
+          color: true,
+          size: true,
+          price: true,
+          availability: true,
+        },
+      },
+      category: { select: { id: true, name: true } },
+    },
+  });
+  if (!product) {
+    notFound();
+  }
+  const primaryImage =
+    product.images.find((img) => img.isPrimary) ?? product.images[0];
+  const imageUrl = primaryImage?.imageUrl ?? null;
+  const jsonLd = buildProductJsonLd({
+    productName: product.name,
+    description: product.description,
+    imageUrl,
+    price: product.price,
+    storeName: store.name,
+    storeSlug,
+    productId: product.id,
+    availability: product.availability,
+    categoryName: product.category?.name,
+  });
+  return (
+    <StorefrontWrapper storeSlug={store.slug}>
+      {" "}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />{" "}
+      <div className="flex min-h-screen flex-col bg-background">
+        {" "}
+        <StoreHeader
+          storeName={store.name}
+          storeSlug={store.slug}
+          logoUrl={store.logoUrl}
+          phone={store.phone}
+          onSearch={() => {}}
+        />{" "}
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          {" "}
+          <nav className="mb-6" aria-label="التنقل">
+            {" "}
+            <Link
+              href={`/${storeSlug}`}
+              className="inline-flex items-center gap-2 text-sm text-ink-soft transition-colors hover:text-brand"
+            >
+              {" "}
+              <ArrowLeftIcon className="h-4 w-4" aria-hidden />{" "}
+              <span>العودة للمتجر</span>{" "}
+            </Link>{" "}
+          </nav>{" "}
+          <article className="grid gap-8 lg:grid-cols-2">
+            {" "}
+            <ImageGallery
+              images={product.images}
+              productName={product.name}
+            />{" "}
+            <div className="flex flex-col">
+              {" "}
+              {product.category && (
+                <p className="mb-2 text-sm font-medium text-gold">
+                  {product.category.name}
+                </p>
+              )}{" "}
+              <div className="flex items-start justify-between gap-4">
+                {" "}
+                <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                  {" "}
+                  {product.name}{" "}
+                </h1>{" "}
+                <ShareButton
+                  productName={product.name}
+                  description={product.description}
+                />{" "}
+              </div>{" "}
+              {product.description && (
+                <p className="mt-4 text-base leading-relaxed text-ink-soft">
+                  {" "}
+                  {product.description}{" "}
+                </p>
+              )}{" "}
+              <div className="mt-6">
+                {" "}
+                <ProductActions
+                  productId={product.id}
+                  name={product.name}
+                  price={product.price}
+                  availability={product.availability}
+                  imageUrl={imageUrl}
+                  storeSlug={storeSlug}
+                  variants={product.variants}
+                />{" "}
+              </div>{" "}
+            </div>{" "}
+          </article>{" "}
+        </main>{" "}
+        <StoreFooter storeName={store.name} />{" "}
+      </div>{" "}
+    </StorefrontWrapper>
+  );
+}

@@ -1,1 +1,241 @@
-'use client' ; import { useEffect, useRef } from 'react' ; import Image from 'next/image' ; import Link from 'next/link' ; import { useCart } from './CartProvider' ; import { Button } from '@/components/ui/Button' ; import { EmptyState } from '@/components/ui/EmptyState' ; import { XIcon, PlusIcon, MinusIcon, TrashIcon, PackageCheckIcon } from '@/components/icons' ; function formatPrice(value: number) { return new Intl.NumberFormat('ar-YE', { maximumFractionDigits: 0 }).format(value) ; } export function CartDrawer({ storeSlug }: { storeSlug: string }) { const { items, itemCount, total, isOpen, closeDrawer, updateQuantity, removeItem } = useCart() ; const drawerRef = useRef<HTMLDivElement>(null) ; // Close on Escape useEffect(() => { if (!isOpen) return ; function handleKeyDown(e: KeyboardEvent) { if (e.key === 'Escape') closeDrawer() ; } document.addEventListener('keydown', handleKeyDown) ; return () => document.removeEventListener('keydown', handleKeyDown) ; }, [isOpen, closeDrawer]) ; // Focus trap useEffect(() => { if (!isOpen) return ; const timer = setTimeout(() => { const focusable = drawerRef.current?.querySelectorAll<HTMLElement>( 'button, [href], input, select, textarea, [tabindex]:not([tabindex=`-1`])' ) ; if (focusable && focusable.length > 0) { focusable[0].focus() } }, 50) ; return () => clearTimeout(timer) ; }, [isOpen]) ; // Lock body scroll useEffect(() => { if (isOpen) { document.body.style.overflow = 'hidden' ; } else { document.body.style.overflow = '' ; } return () => { document.body.style.overflow = '' ; } ; }, [isOpen]) ; return ( <div className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} role='dialog' aria-modal='true' aria-label='سلة التسوق'> {/* Backdrop */} <div className={`absolute inset-0 bg-ink/55 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={closeDrawer} /> {/* Drawer */} <div ref={drawerRef} className={`absolute top-0 left-0 h-full w-full max-w-md bg-surface shadow-2xl flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`} dir='rtl' > {/* Header */} <div className='flex items-center justify-between border-b border-line px-6 py-4'> <h2 className='text-lg font-bold text-ink'>سلة التسوق</h2> <button type='button' onClick={closeDrawer} className='flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-background' aria-label='إغلاق السلة' > <XIcon className='h-5 w-5 text-ink-soft' /> </button> </div> {/* Content */} <div className='flex-1 overflow-y-auto px-6 py-4'> {items.length === 0 ? ( <div className='pt-12'> <EmptyState icon={<PackageCheckIcon className='h-12 w-12 text-ink-soft' />} title='السلة فارغة' description='لم تضيفي أي منتجات للسلة بعد. تصفحي المتجر واختي منتجاتك المفضلة.' /> </div> ) : ( <ul className='space-y-4'> {items.map((item) => ( <li key={`${item.productId}-${item.variantId ?? 'base'}`} className='flex gap-3 rounded-xl border border-line bg-background p-3' > {/* Image */} <div className='relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#eee6d9]'> {item.imageUrl ? ( <Image src={item.imageUrl} alt={item.name} fill className='object-cover' sizes='80px' /> ) : ( <div className='flex h-full items-center justify-center text-xs text-ink-soft'> لا توجد صورة </div> )} </div> {/* Details */} <div className='flex flex-1 flex-col'> <h3 className='text-sm font-semibold text-ink line-clamp-1'>{item.name}</h3> {item.variantLabel && ( <p className='mt-0.5 text-xs text-ink-soft'>{item.variantLabel}</p> )} <p className='mt-1 font-mono text-sm font-medium text-ink'> {formatPrice(item.price)} <span className='text-[10px] text-ink-soft'>ريال</span> </p> {/* Quantity controls */} <div className='mt-2 flex items-center gap-2'> <button type='button' onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)} className='flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-surface transition-colors hover:border-gold' aria-label='تقليل الكمية' > <MinusIcon className='h-3.5 w-3.5 text-ink' /> </button> <span className='min-w-[1.5rem] text-center text-sm font-medium text-ink' aria-live='polite'> {item.quantity} </span> <button type='button' onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)} className='flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-surface transition-colors hover:border-gold' aria-label='زيادة الكمية' > <PlusIcon className='h-3.5 w-3.5 text-ink' /> </button> <button type='button' onClick={() => removeItem(item.productId, item.variantId)} className='me-auto flex h-7 w-7 items-center justify-center rounded-lg text-ink-soft transition-colors hover:text-danger' aria-label='إزالة من السلة' > <TrashIcon className='h-4 w-4' /> </button> </div> </div> </li> ))} </ul> )} </div> {/* Footer */} {items.length > 0 && ( <div className='border-t border-line px-6 py-4 space-y-3'> <div className='flex items-center justify-between'> <span className='text-sm text-ink-soft'>المجموع</span> <span className='font-display text-xl font-bold text-ink'> {formatPrice(total)} <span className='text-sm font-normal text-ink-soft'>ريال يمني</span> </span> </div> <p className='text-xs text-ink-soft/60 text-center'> السعر استرشادي — السعر النهائي يُحسب عند إتمام الطلب </p> <Link href={`/${storeSlug}/checkout`} onClick={closeDrawer} className='block w-full'> <Button variant='primary' size='lg' className='w-full'> إتمام الطلب </Button> </Link> </div> )} </div> </div> ) ; }
+'use client';
+
+import { useEffect, useRef } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+import { useCart } from './CartProvider';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  XIcon,
+  PlusIcon,
+  MinusIcon,
+  TrashIcon,
+  PackageCheckIcon,
+} from '@/components/icons';
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat('ar-YE', { maximumFractionDigits: 0 }).format(value);
+}
+
+export function CartDrawer({ storeSlug }: { storeSlug: string }) {
+  const { items, total, isOpen, closeDrawer, updateQuantity, removeItem } =
+    useCart();
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') closeDrawer();
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, closeDrawer]);
+
+  // Focus trap
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable && focusable.length > 0) {
+        focusable[0].focus();
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  // Lock body scroll
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 transition-opacity duration-300 ${
+        isOpen
+          ? 'pointer-events-auto opacity-100'
+          : 'pointer-events-none opacity-0'
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="سلة التسوق"
+    >
+      {/* Backdrop */}
+      <div
+        className={`absolute inset-0 bg-ink/55 backdrop-blur-sm transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0'
+        }`}
+        onClick={closeDrawer}
+      />
+
+      {/* Drawer */}
+      <div
+        ref={drawerRef}
+        className={`absolute top-0 left-0 flex h-full w-full max-w-md flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        dir="rtl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <h2 className="text-lg font-bold text-ink">سلة التسوق</h2>
+          <button
+            type="button"
+            onClick={closeDrawer}
+            className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-background"
+            aria-label="إغلاق السلة"
+          >
+            <XIcon className="h-5 w-5 text-ink-soft" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {items.length === 0 ? (
+            <div className="pt-12">
+              <EmptyState
+                icon={<PackageCheckIcon className="h-12 w-12 text-ink-soft" />}
+                title="السلة فارغة"
+                description="لم تضيفي أي منتجات للسلة بعد. تصفحي المتجر واختاري منتجاتك المفضلة."
+              />
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {items.map((item) => (
+                <li
+                  key={`${item.productId}-${item.variantId ?? 'base'}`}
+                  className="flex gap-3 rounded-xl border border-line bg-background p-3"
+                >
+                  {/* Image */}
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#eee6d9]">
+                    {item.imageUrl ? (
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs text-ink-soft">
+                        لا توجد صورة
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex flex-1 flex-col">
+                    <h3 className="line-clamp-1 text-sm font-semibold text-ink">
+                      {item.name}
+                    </h3>
+                    {item.variantLabel && (
+                      <p className="mt-0.5 text-xs text-ink-soft">
+                        {item.variantLabel}
+                      </p>
+                    )}
+                    <p className="mt-1 font-mono text-sm font-medium text-ink">
+                      {formatPrice(item.price)}{' '}
+                      <span className="text-[10px] text-ink-soft">ريال</span>
+                    </p>
+
+                    {/* Quantity controls */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateQuantity(
+                            item.productId,
+                            item.variantId,
+                            item.quantity - 1
+                          )
+                        }
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-surface transition-colors hover:border-gold"
+                        aria-label="تقليل الكمية"
+                      >
+                        <MinusIcon className="h-3.5 w-3.5 text-ink" />
+                      </button>
+
+                      <span
+                        className="min-w-[1.5rem] text-center text-sm font-medium text-ink"
+                        aria-live="polite"
+                      >
+                        {item.quantity}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateQuantity(
+                            item.productId,
+                            item.variantId,
+                            item.quantity + 1
+                          )
+                        }
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-surface transition-colors hover:border-gold"
+                        aria-label="زيادة الكمية"
+                      >
+                        <PlusIcon className="h-3.5 w-3.5 text-ink" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.productId, item.variantId)}
+                        className="me-auto flex h-7 w-7 items-center justify-center rounded-lg text-ink-soft transition-colors hover:text-danger"
+                        aria-label="إزالة من السلة"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Footer */}
+        {items.length > 0 && (
+          <div className="space-y-3 border-t border-line px-6 py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-ink-soft">المجموع</span>
+              <span className="font-display text-xl font-bold text-ink">
+                {formatPrice(total)}{' '}
+                <span className="text-sm font-normal text-ink-soft">
+                  ريال يمني
+                </span>
+              </span>
+            </div>
+            <p className="text-center text-xs text-ink-soft/60">
+              السعر استرشادي — السعر النهائي يُحسب عند إتمام الطلب
+            </p>
+            <Link
+              href={`/${storeSlug}/checkout`}
+              onClick={closeDrawer}
+              className="block w-full"
+            >
+              <Button variant="primary" size="lg" className="w-full">
+                إتمام الطلب
+              </Button>
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

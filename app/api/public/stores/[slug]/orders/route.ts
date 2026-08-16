@@ -1,1 +1,319 @@
-import { NextResponse } from 'next/server' ; import { prisma } from '@/lib/prisma' ; import { handleApiError, errorResponse, successResponse } from '@/lib/api-response' ; import { applyRateLimit, rateLimitPresets } from '@/lib/rate-limit' ; import { headers } from 'next/headers' ; import { z } from 'zod' ; import { publicCreateOrderSchema } from '@/lib/validation/store' ; import { Prisma } from '@prisma/client' ; const phoneQuerySchema = z.object({ phone: z.string().min(1).max(20), }) ; function generateOrderNumber(): string { const timestamp = Date.now().toString(36).toUpperCase() ; const random = Math.random().toString(36).substring(2, 5).toUpperCase() ; return `#DL-${timestamp}${random}` ; } /* ============================================================ GET — List customer orders by phone ============================================================ */ export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) { const reqHeaders = await headers() ; const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.publicRead) ; if (rateLimitResponse) return rateLimitResponse ; try { const { slug } = await params ; const { searchParams } = new URL(request.url) ; const phone = searchParams.get('phone') || '' ; const parsed = phoneQuerySchema.safeParse({ phone }) ; if (!parsed.success) { return errorResponse('رقم الهاتف مطلوب', 400) ; } const store = await prisma.store.findUnique({ where: { slug, status: 'ACTIVE' }, select: { id: true }, }) ; if (!store) { return errorResponse('المتجر غير موجود', 404) ; } const customer = await prisma.customer.findUnique({ where: { storeId_phone: { storeId: store.id, phone: parsed.data.phone, }, }, select: { id: true, name: true, phone: true, address: true }, }) ; if (!customer) { return NextResponse.json({ success: true, customer: null, orders: [] }) ; } const orders = await prisma.order.findMany({ where: { customerId: customer.id, storeId: store.id, }, orderBy: { createdAt: 'desc' }, include: { items: { include: { product: { select: { name: true } }, variant: { select: { color: true, size: true } }, }, }, }, }) ; const formattedOrders = orders.map((order) => ({ id: order.id, orderNumber: order.orderNumber, status: order.status, totalAmount: order.totalAmount.toString(), createdAt: order.createdAt.toISOString(), itemCount: order.items.length, items: order.items.map((item) => ({ id: item.id, productName: item.product.name, variantLabel: [item.variant?.color, item.variant?.size].filter(Boolean).join(' / ') || null, quantity: item.quantity, unitPrice: item.unitPrice.toString(), })), })) ; return NextResponse.json({ success: true, customer: { id: customer.id, name: customer.name, phone: customer.phone, address: customer.address, }, orders: formattedOrders, }) ; } catch (error) { return handleApiError(error) ; } } /* ============================================================ POST — Create customer order ============================================================ */ export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) { const reqHeaders = await headers() ; const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.publicOrder) ; if (rateLimitResponse) return rateLimitResponse ; try { const { slug } = await params ; const rawBody = await request.json() ; const parsed = publicCreateOrderSchema.safeParse(rawBody) ; if (!parsed.success) { const message = parsed.error.issues[0]?.message || 'بيانات الطلب غير صالحة' ; return errorResponse(message, 400) ; } const { customerName, customerPhone, customerAddress, notes, items } = parsed.data ; // 1. Verify store exists and is ACTIVE const store = await prisma.store.findUnique({ where: { slug, status: 'ACTIVE' }, select: { id: true, name: true }, }) ; if (!store) { return errorResponse('المتجر غير موجود أو غير نشط', 404) ; } // 2. Validate each item: product belongs to store, variant belongs to product, availability const validatedItems: Array<{ productId: string ; variantId: string | null ; quantity: number ; unitPrice: number ; productName: string ; }> = [] ; for (const item of items) { const product = await prisma.product.findFirst({ where: { id: item.productId, storeId: store.id, status: 'ACTIVE', }, select: { id: true, name: true, price: true, availability: true }, }) ; if (!product) { return errorResponse(`المنتج ${item.productId} غير موجود في المتجر`, 400) ; } if (product.availability !== 'AVAILABLE') { return errorResponse(`المنتج ${product.name} غير متوفر حالياً`, 400) ; } let unitPrice = product.price ; if (item.variantId) { const variant = await prisma.productVariant.findFirst({ where: { id: item.variantId, productId: product.id, }, select: { id: true, price: true, availability: true, color: true, size: true }, }) ; if (!variant) { return errorResponse(`الخيار المحدد للمنتج ${product.name} غير موجود`, 400) ; } if (variant.availability !== 'AVAILABLE') { return errorResponse(`الخيار المحدد للمنتج ${product.name} غير متوفر`, 400) ; } unitPrice = variant.price ?? product.price ; } validatedItems.push({ productId: product.id, variantId: item.variantId, quantity: item.quantity, unitPrice, productName: product.name, }) ; } // 3. Calculate totals server-side const totalAmount = validatedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) ; // 4. Find or create customer const customer = await prisma.customer.upsert({ where: { storeId_phone: { storeId: store.id, phone: customerPhone, }, }, update: { name: customerName, address: customerAddress, }, create: { storeId: store.id, name: customerName, phone: customerPhone, address: customerAddress, }, }) ; // 5. Create order with items const order = await prisma.order.create({ data: { storeId: store.id, customerId: customer.id, status: 'NEW', totalAmount: new Prisma.Decimal(totalAmount), notes: notes || null, orderNumber: generateOrderNumber(), items: { create: validatedItems.map((item) => ({ productId: item.productId, variantId: item.variantId, quantity: item.quantity, unitPrice: new Prisma.Decimal(item.unitPrice), })), }, }, include: { items: { include: { product: { select: { name: true } }, variant: { select: { color: true, size: true } }, }, }, customer: true, }, }) ; return successResponse( { order: { id: order.id, orderNumber: order.orderNumber, status: order.status, totalAmount: order.totalAmount.toString(), items: order.items.map((item) => ({ id: item.id, productName: item.product.name, variantLabel: [item.variant?.color, item.variant?.size].filter(Boolean).join(' / ') || null, quantity: item.quantity, unitPrice: item.unitPrice.toString(), })), customer: { id: customer.id, name: customer.name, phone: customer.phone, }, createdAt: order.createdAt.toISOString(), }, }, 'تم إنشاء الطلب بنجاح', 201 ) ; } catch (error) { return handleApiError(error) ; } }
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { Prisma } from "@prisma/client";
+import { z } from "zod";
+
+import { prisma } from "@/lib/prisma";
+import {
+  handleApiError,
+  errorResponse,
+  successResponse,
+} from "@/lib/api-response";
+import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
+import { publicCreateOrderSchema } from "@/lib/validation/store";
+
+const phoneQuerySchema = z.object({
+  phone: z.string().min(1).max(20),
+});
+
+function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `#DL-${timestamp}${random}`;
+}
+
+/* ============================================================
+   GET — List customer orders by phone
+   ============================================================ */
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(
+    reqHeaders,
+    rateLimitPresets.publicRead,
+  );
+  if (rateLimitResponse) return rateLimitResponse;
+
+  try {
+    const { slug } = await params;
+    const { searchParams } = new URL(request.url);
+    const phone = searchParams.get("phone") || "";
+
+    const parsed = phoneQuerySchema.safeParse({ phone });
+    if (!parsed.success) {
+      return errorResponse("رقم الهاتف مطلوب", 400);
+    }
+
+    const store = await prisma.store.findUnique({
+      where: { slug, status: "ACTIVE" },
+      select: { id: true },
+    });
+
+    if (!store) {
+      return errorResponse("المتجر غير موجود", 404);
+    }
+
+    const customer = await prisma.customer.findUnique({
+      where: {
+        storeId_phone: {
+          storeId: store.id,
+          phone: parsed.data.phone,
+        },
+      },
+      select: { id: true, name: true, phone: true, address: true },
+    });
+
+    if (!customer) {
+      return NextResponse.json({ success: true, customer: null, orders: [] });
+    }
+
+    const orders = await prisma.order.findMany({
+      where: {
+        customerId: customer.id,
+        storeId: store.id,
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        items: {
+          include: {
+            product: { select: { name: true } },
+            variant: { select: { color: true, size: true } },
+          },
+        },
+      },
+    });
+
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      totalAmount: order.totalAmount.toString(),
+      createdAt: order.createdAt.toISOString(),
+      itemCount: order.items.length,
+      items: order.items.map((item) => ({
+        id: item.id,
+        productName: item.product.name,
+        variantLabel:
+          [item.variant?.color, item.variant?.size]
+            .filter(Boolean)
+            .join(" / ") || null,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice.toString(),
+      })),
+    }));
+
+    return NextResponse.json({
+      success: true,
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        address: customer.address,
+      },
+      orders: formattedOrders,
+    });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+/* ============================================================
+   POST — Create customer order
+   ============================================================ */
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const reqHeaders = await headers();
+  const rateLimitResponse = applyRateLimit(
+    reqHeaders,
+    rateLimitPresets.publicOrder,
+  );
+  if (rateLimitResponse) return rateLimitResponse;
+
+  try {
+    const { slug } = await params;
+    const rawBody = await request.json();
+
+    const parsed = publicCreateOrderSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const message =
+        parsed.error.issues[0]?.message || "بيانات الطلب غير صالحة";
+      return errorResponse(message, 400);
+    }
+
+    const { customerName, customerPhone, customerAddress, notes, items } =
+      parsed.data;
+
+    // 1. Verify store exists and is ACTIVE
+    const store = await prisma.store.findUnique({
+      where: { slug, status: "ACTIVE" },
+      select: { id: true, name: true },
+    });
+
+    if (!store) {
+      return errorResponse("المتجر غير موجود أو غير نشط", 404);
+    }
+
+    // 2. Validate each item: product belongs to store, variant belongs to product, availability
+    const validatedItems: Array<{
+      productId: string;
+      variantId: string | null;
+      quantity: number;
+      unitPrice: number;
+      productName: string;
+    }> = [];
+
+    for (const item of items) {
+      const product = await prisma.product.findFirst({
+        where: {
+          id: item.productId,
+          storeId: store.id,
+          status: "ACTIVE",
+        },
+        select: { id: true, name: true, price: true, availability: true },
+      });
+
+      if (!product) {
+        return errorResponse(
+          `المنتج ${item.productId} غير موجود في المتجر`,
+          400,
+        );
+      }
+
+      if (product.availability !== "AVAILABLE") {
+        return errorResponse(`المنتج ${product.name} غير متوفر حالياً`, 400);
+      }
+
+      let unitPrice = product.price;
+
+      if (item.variantId) {
+        const variant = await prisma.productVariant.findFirst({
+          where: {
+            id: item.variantId,
+            productId: product.id,
+          },
+          select: {
+            id: true,
+            price: true,
+            availability: true,
+            color: true,
+            size: true,
+          },
+        });
+
+        if (!variant) {
+          return errorResponse(
+            `الخيار المحدد للمنتج ${product.name} غير موجود`,
+            400,
+          );
+        }
+
+        if (variant.availability !== "AVAILABLE") {
+          return errorResponse(
+            `الخيار المحدد للمنتج ${product.name} غير متوفر`,
+            400,
+          );
+        }
+
+        unitPrice = variant.price ?? product.price;
+      }
+
+      validatedItems.push({
+        productId: product.id,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice,
+        productName: product.name,
+      });
+    }
+
+    // 3. Calculate totals server-side
+    const totalAmount = validatedItems.reduce(
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0,
+    );
+
+    // 4. Find or create customer
+    const customer = await prisma.customer.upsert({
+      where: {
+        storeId_phone: {
+          storeId: store.id,
+          phone: customerPhone,
+        },
+      },
+      update: {
+        name: customerName,
+        address: customerAddress,
+      },
+      create: {
+        storeId: store.id,
+        name: customerName,
+        phone: customerPhone,
+        address: customerAddress,
+      },
+    });
+
+    // 5. Create order with items
+    const order = await prisma.order.create({
+      data: {
+        storeId: store.id,
+        customerId: customer.id,
+        status: "NEW",
+        totalAmount: new Prisma.Decimal(totalAmount),
+        notes: notes || null,
+        orderNumber: generateOrderNumber(),
+        items: {
+          create: validatedItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            unitPrice: new Prisma.Decimal(item.unitPrice),
+          })),
+        },
+      },
+      include: {
+        items: {
+          include: {
+            product: { select: { name: true } },
+            variant: { select: { color: true, size: true } },
+          },
+        },
+        customer: true,
+      },
+    });
+
+    return successResponse(
+      {
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          totalAmount: order.totalAmount.toString(),
+          items: order.items.map((item) => ({
+            id: item.id,
+            productName: item.product.name,
+            variantLabel:
+              [item.variant?.color, item.variant?.size]
+                .filter(Boolean)
+                .join(" / ") || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice.toString(),
+          })),
+          customer: {
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+          },
+          createdAt: order.createdAt.toISOString(),
+        },
+      },
+      "تم إنشاء الطلب بنجاح",
+      201,
+    );
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

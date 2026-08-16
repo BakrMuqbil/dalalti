@@ -1,1 +1,68 @@
-export default function ProductDetailLoading() { return ( <div className='min-h-screen bg-background' dir='rtl'> {/* Header skeleton */} <header className='sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur'> <div className='mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8'> <div className='flex items-center gap-3'> <div className='h-10 w-10 animate-pulse rounded-xl bg-line' /> <div className='h-5 w-32 animate-pulse rounded bg-line' /> </div> </div> </header> <main className='mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8'> <div className='mb-6 h-5 w-32 animate-pulse rounded bg-line' /> <div className='grid gap-8 lg:grid-cols-2'> {/* Image gallery skeleton */} <div className='space-y-4'> <div className='aspect-[3/4] animate-pulse rounded-2xl bg-line' /> <div className='flex gap-3'> {Array.from({ length: 4 }).map((_, i) => ( <div key={i} className='h-20 w-20 animate-pulse rounded-xl bg-line' /> ))} </div> </div> {/* Details skeleton */} <div className='flex flex-col'> <div className='mb-2 h-4 w-20 animate-pulse rounded bg-line' /> <div className='flex items-start justify-between gap-4'> <div className='h-8 w-3/4 animate-pulse rounded-lg bg-line' /> <div className='h-10 w-10 shrink-0 animate-pulse rounded-xl bg-line' /> </div> <div className='mt-4 h-20 w-full animate-pulse rounded bg-line' /> <div className='mt-6 space-y-4'> <div className='h-4 w-16 animate-pulse rounded bg-line' /> <div className='flex gap-2'> {Array.from({ length: 4 }).map((_, i) => ( <div key={i} className='h-10 w-10 animate-pulse rounded-full bg-line' /> ))} </div> </div> <div className='mt-auto pt-8'> <div className='h-12 w-full animate-pulse rounded-xl bg-line' /> </div> </div> </div> </main> </div> ) ; }
+export default function ProductDetailLoading() {
+  return (
+    <div className="min-h-screen bg-background" dir="rtl">
+      {" "}
+      {/* Header skeleton */}{" "}
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
+        {" "}
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          {" "}
+          <div className="flex items-center gap-3">
+            {" "}
+            <div className="h-10 w-10 animate-pulse rounded-xl bg-line" />{" "}
+            <div className="h-5 w-32 animate-pulse rounded bg-line" />{" "}
+          </div>{" "}
+        </div>{" "}
+      </header>{" "}
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {" "}
+        <div className="mb-6 h-5 w-32 animate-pulse rounded bg-line" />{" "}
+        <div className="grid gap-8 lg:grid-cols-2">
+          {" "}
+          {/* Image gallery skeleton */}{" "}
+          <div className="space-y-4">
+            {" "}
+            <div className="aspect-[3/4] animate-pulse rounded-2xl bg-line" />{" "}
+            <div className="flex gap-3">
+              {" "}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-20 w-20 animate-pulse rounded-xl bg-line"
+                />
+              ))}{" "}
+            </div>{" "}
+          </div>{" "}
+          {/* Details skeleton */}{" "}
+          <div className="flex flex-col">
+            {" "}
+            <div className="mb-2 h-4 w-20 animate-pulse rounded bg-line" />{" "}
+            <div className="flex items-start justify-between gap-4">
+              {" "}
+              <div className="h-8 w-3/4 animate-pulse rounded-lg bg-line" />{" "}
+              <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-line" />{" "}
+            </div>{" "}
+            <div className="mt-4 h-20 w-full animate-pulse rounded bg-line" />{" "}
+            <div className="mt-6 space-y-4">
+              {" "}
+              <div className="h-4 w-16 animate-pulse rounded bg-line" />{" "}
+              <div className="flex gap-2">
+                {" "}
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-10 w-10 animate-pulse rounded-full bg-line"
+                  />
+                ))}{" "}
+              </div>{" "}
+            </div>{" "}
+            <div className="mt-auto pt-8">
+              {" "}
+              <div className="h-12 w-full animate-pulse rounded-xl bg-line" />{" "}
+            </div>{" "}
+          </div>{" "}
+        </div>{" "}
+      </main>{" "}
+    </div>
+  );
+}

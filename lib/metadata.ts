@@ -2,17 +2,18 @@
    Metadata utilities for SEO & OpenGraph
    ============================================================ */
 
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
-const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://dalalti.com';
+const DEFAULT_BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://dalalti.com";
 
 export function getBaseUrl(): string {
   return DEFAULT_BASE_URL;
 }
 
 export function buildCanonicalUrl(path: string): string {
-  const base = getBaseUrl().replace(/\/$/, '');
-  const cleanPath = path.replace(/^\//, '');
+  const base = getBaseUrl().replace(/\/$/, "");
+  const cleanPath = path.replace(/^\//, "");
   return `${base}/${cleanPath}`;
 }
 
@@ -23,11 +24,18 @@ interface StoreMetaInput {
   slug: string;
 }
 
-export function buildStoreMetadata({ storeName, description, logoUrl, slug }: StoreMetaInput): Metadata {
+export function buildStoreMetadata({
+  storeName,
+  description,
+  logoUrl,
+  slug,
+}: StoreMetaInput): Metadata {
   const title = `${storeName} | دلالتي`;
   const desc = description || `تصفح منتجات ${storeName} على دلالتي`;
   const url = buildCanonicalUrl(slug);
-  const images = logoUrl ? [{ url: logoUrl, width: 512, height: 512, alt: storeName }] : undefined;
+  const images = logoUrl
+    ? [{ url: logoUrl, width: 512, height: 512, alt: storeName }]
+    : undefined;
 
   return {
     title,
@@ -38,13 +46,13 @@ export function buildStoreMetadata({ storeName, description, logoUrl, slug }: St
       title,
       description: desc,
       url,
-      siteName: 'دلالتي',
-      locale: 'ar_YE',
-      type: 'website',
+      siteName: "دلالتي",
+      locale: "ar_YE",
+      type: "website",
       images,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description: desc,
       images: images?.map((img) => img.url),
@@ -64,7 +72,7 @@ interface ProductMetaInput {
   storeName: string;
   storeSlug: string;
   productId: string;
-  availability: 'AVAILABLE' | 'UNAVAILABLE';
+  availability: "AVAILABLE" | "UNAVAILABLE";
 }
 
 export function buildProductMetadata({
@@ -80,7 +88,9 @@ export function buildProductMetadata({
   const title = `${productName} | ${storeName}`;
   const desc = description || `تفاصيل ${productName} من ${storeName}`;
   const url = buildCanonicalUrl(`${storeSlug}/products/${productId}`);
-  const images = imageUrl ? [{ url: imageUrl, width: 800, height: 1200, alt: productName }] : undefined;
+  const images = imageUrl
+    ? [{ url: imageUrl, width: 800, height: 1200, alt: productName }]
+    : undefined;
 
   return {
     title,
@@ -92,12 +102,12 @@ export function buildProductMetadata({
       description: desc,
       url,
       siteName: storeName,
-      locale: 'ar_YE',
-      type: 'product',
+      locale: "ar_YE",
+      type: "product",
       images,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description: desc,
       images: images?.map((img) => img.url),
@@ -107,9 +117,10 @@ export function buildProductMetadata({
       follow: true,
     },
     other: {
-      'product:price:amount': price.toString(),
-      'product:price:currency': 'YER',
-      'product:availability': availability === 'AVAILABLE' ? 'in stock' : 'out of stock',
+      "product:price:amount": price.toString(),
+      "product:price:currency": "YER",
+      "product:availability":
+        availability === "AVAILABLE" ? "in stock" : "out of stock",
     },
   };
 }
@@ -126,7 +137,7 @@ interface ProductJsonLdInput {
   storeName: string;
   storeSlug: string;
   productId: string;
-  availability: 'AVAILABLE' | 'UNAVAILABLE';
+  availability: "AVAILABLE" | "UNAVAILABLE";
   categoryName?: string | null;
 }
 
@@ -142,25 +153,28 @@ export function buildProductJsonLd({
   categoryName,
 }: ProductJsonLdInput): Record<string, unknown> {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
+    "@context": "https://schema.org",
+    "@type": "Product",
     name: productName,
     description: description || undefined,
     image: imageUrl || undefined,
     sku: productId,
     brand: {
-      '@type': 'Brand',
+      "@type": "Brand",
       name: storeName,
     },
     category: categoryName || undefined,
     offers: {
-      '@type': 'Offer',
+      "@type": "Offer",
       url: buildCanonicalUrl(`${storeSlug}/products/${productId}`),
-      priceCurrency: 'YER',
+      priceCurrency: "YER",
       price: price.toString(),
-      availability: availability === 'AVAILABLE' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability:
+        availability === "AVAILABLE"
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
       seller: {
-        '@type': 'Organization',
+        "@type": "Organization",
         name: storeName,
       },
     },
@@ -175,15 +189,21 @@ interface StoreJsonLdInput {
   phone: string | null;
 }
 
-export function buildStoreJsonLd({ storeName, description, logoUrl, slug, phone }: StoreJsonLdInput): Record<string, unknown> {
+export function buildStoreJsonLd({
+  storeName,
+  description,
+  logoUrl,
+  slug,
+  phone,
+}: StoreJsonLdInput): Record<string, unknown> {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Store',
+    "@context": "https://schema.org",
+    "@type": "Store",
     name: storeName,
     description: description || undefined,
     image: logoUrl || undefined,
     url: buildCanonicalUrl(slug),
     telephone: phone || undefined,
-    '@id': buildCanonicalUrl(slug),
+    "@id": buildCanonicalUrl(slug),
   };
 }
