@@ -10,7 +10,6 @@ import { ImageGallery } from "./components/ImageGallery";
 import { ShareButton } from "./components/ShareButton";
 import { ProductActions } from "../../components/ProductActions";
 import { StorefrontWrapper } from "../../components/StorefrontWrapper";
-import { Link, json } from 'react-router-dom';
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ storeSlug: string; productId: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -36,12 +35,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
   const primaryImage =
-    product.images.find((img) => img.isPrimary) ?? product.images[0];
+    product.images.find((img: { isPrimary: boolean }) => img.isPrimary) ?? product.images[0];
   return buildProductMetadata({
     productName: product.name,
     description: product.description,
     imageUrl: primaryImage?.imageUrl ?? null,
-    price: product.price,
+    price: product.price.toNumber(),
     storeName: store.name,
     storeSlug,
     productId,
@@ -92,13 +91,13 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
   const primaryImage =
-    product.images.find((img) => img.isPrimary) ?? product.images[0];
+    product.images.find((img: { isPrimary: boolean }) => img.isPrimary) ?? product.images[0];
   const imageUrl = primaryImage?.imageUrl ?? null;
   const jsonLd = buildProductJsonLd({
     productName: product.name,
     description: product.description,
     imageUrl,
-    price: product.price,
+    price: product.price.toNumber(),
     storeName: store.name,
     storeSlug,
     productId: product.id,
@@ -169,11 +168,17 @@ export default async function ProductDetailPage({ params }: Props) {
                 <ProductActions
                   productId={product.id}
                   name={product.name}
-                  price={product.price}
+                  price={product.price.toNumber()}
                   availability={product.availability}
                   imageUrl={imageUrl}
                   storeSlug={storeSlug}
-                  variants={product.variants}
+                  variants={product.variants.map((v) => ({
+                    id: v.id,
+                    color: v.color,
+                    size: v.size,
+                    price: v.price?.toNumber() ?? product.price.toNumber(),
+                    availability: v.availability,
+                  }))}
                 />{" "}
               </div>{" "}
             </div>{" "}

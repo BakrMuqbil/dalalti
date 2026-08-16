@@ -103,7 +103,7 @@ export function buildProductMetadata({
       url,
       siteName: storeName,
       locale: "ar_YE",
-      type: "product",
+      type: "website",
       images,
     },
     twitter: {

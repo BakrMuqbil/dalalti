@@ -14,7 +14,7 @@ async function main() {
 
   console.log("\n=== STORES ===");
   console.dir(
-    stores.map((store) => ({
+    stores.map((store: typeof stores[0]) => ({
       id: store.id,
       name: store.name,
       slug: store.slug,
@@ -27,7 +27,7 @@ async function main() {
 
   console.log("\n=== USERS ===");
   console.dir(
-    users.map((user) => ({
+    users.map((user: typeof users[0]) => ({
       id: user.id,
       name: user.name,
       role: user.role,
@@ -37,7 +37,7 @@ async function main() {
 
   console.log("\n=== SUBSCRIPTIONS ===");
   console.dir(
-    subscriptions.map((subscription) => ({
+    subscriptions.map((subscription: typeof subscriptions[0]) => ({
       id: subscription.id,
       storeId: subscription.storeId,
       status: subscription.status,

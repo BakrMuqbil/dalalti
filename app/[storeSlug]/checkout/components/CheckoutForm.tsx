@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useCart } from "../CartProvider";
+import { useCart } from "../../components/CartProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";

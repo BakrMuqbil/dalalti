@@ -79,16 +79,16 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
   }
 
   // Build orderBy
-  const orderBy: Record<string, string> = (() => {
+  const orderBy: { price?: 'asc' | 'desc'; name?: 'asc'; createdAt?: 'desc' } = (() => {
     switch (sort) {
       case "price-asc":
-        return { price: "asc" };
+        return { price: "asc" as const };
       case "price-desc":
-        return { price: "desc" };
+        return { price: "desc" as const };
       case "name":
-        return { name: "asc" };
+        return { name: "asc" as const };
       default:
-        return { createdAt: "desc" };
+        return { createdAt: "desc" as const };
     }
   })();
 
@@ -125,17 +125,17 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
     },
   });
 
-  const categories = store.categories.map((c) => ({
+  const categories = store.categories.map((c: { id: string; name: string; imageUrl: string | null }) => ({
     id: c.id,
     name: c.name,
     imageUrl: c.imageUrl,
   }));
 
-  const productList = products.map((p) => ({
+  const productList = products.map((p: typeof products[0]) => ({
     id: p.id,
     name: p.name,
     description: p.description,
-    price: p.price,
+    price: p.price.toNumber(),
     availability: p.availability,
     images: p.images,
     variants: p.variants,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/app/generated/prisma/client";
 import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
@@ -359,7 +360,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       if (Object.keys(ownerData).length > 0) {
         await tx.user.update({ where: { id: existing.owner.id }, data: ownerData });
       }

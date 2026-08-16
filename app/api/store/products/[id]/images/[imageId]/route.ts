@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/app/generated/prisma/client";
 import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/require-auth";
@@ -103,7 +104,7 @@ export async function PATCH(
     }
 
     if (data.isPrimary === true) {
-      const image = await prisma.$transaction(async (tx) => {
+      const image = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tx.productImage.updateMany({
           where: {
             productId: id,

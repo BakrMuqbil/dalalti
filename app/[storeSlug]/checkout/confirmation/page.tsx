@@ -4,7 +4,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { ReceiptIcon, ArrowLeftIcon } from "@/components/icons";
 import Link from "next/link";
-import { Link } from 'react-router-dom';
 export const dynamic = "force-dynamic";
 type Props = {
   params: Promise<{ storeSlug: string }>;
@@ -65,7 +64,7 @@ export default async function ConfirmationPage({
                 {" "}
                 <span className="text-sm text-ink-soft">رقم الطلب</span>{" "}
                 <span className="font-mono text-lg font-bold text-brand">
-                  {order.orderNumber}
+                  #{order.id.slice(0, 8).toUpperCase()}
                 </span>{" "}
               </div>{" "}
               <div className="space-y-3">
@@ -96,7 +95,7 @@ export default async function ConfirmationPage({
                     </div>{" "}
                     <span className="font-mono text-sm font-medium text-ink">
                       {" "}
-                      {formatPrice(Number(item.unitPrice) * item.quantity)}{" "}
+                      {formatPrice(Number(item.unitPrice.toString()) * item.quantity)}{" "}
                       ريال{" "}
                     </span>{" "}
                   </div>

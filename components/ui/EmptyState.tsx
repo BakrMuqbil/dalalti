@@ -5,9 +5,10 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  children?: ReactNode;
 }
 
-export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, children }: EmptyStateProps) {
   return (
     <div className="p-12 text-center">
       {icon && (
@@ -20,6 +21,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
         <p className="mt-2 text-sm text-ink-soft">{description}</p>
       )}
       {action && <div className="mt-5">{action}</div>}
+      {children && <div className="mt-5">{children}</div>}
     </div>
   );
 }

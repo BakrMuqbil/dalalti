@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -55,12 +55,10 @@ export async function GET(
       return errorResponse("المتجر غير موجود", 404);
     }
 
-    const customer = await prisma.customer.findUnique({
+    const customer = await prisma.customer.findFirst({
       where: {
-        storeId_phone: {
-          storeId: store.id,
-          phone: parsed.data.phone,
-        },
+        storeId: store.id,
+        phone: parsed.data.phone,
       },
       select: { id: true, name: true, phone: true, address: true },
     });
@@ -87,7 +85,7 @@ export async function GET(
 
     const formattedOrders = orders.map((order) => ({
       id: order.id,
-      orderNumber: order.orderNumber,
+      orderNumber: order.id.slice(0, 8).toUpperCase(),
       status: order.status,
       totalAmount: order.totalAmount.toString(),
       createdAt: order.createdAt.toISOString(),
@@ -187,7 +185,7 @@ export async function POST(
         return errorResponse(`المنتج ${product.name} غير متوفر حالياً`, 400);
       }
 
-      let unitPrice = product.price;
+      let unitPrice = product.price.toNumber();
 
       if (item.variantId) {
         const variant = await prisma.productVariant.findFirst({
@@ -218,7 +216,7 @@ export async function POST(
           );
         }
 
-        unitPrice = variant.price ?? product.price;
+        unitPrice = (variant.price ?? product.price).toNumber();
       }
 
       validatedItems.push({
@@ -236,63 +234,76 @@ export async function POST(
       0,
     );
 
-    // 4. Find or create customer
-    const customer = await prisma.customer.upsert({
-      where: {
-        storeId_phone: {
+    // 4. Find or create customer using transaction
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      let customerRecord = await tx.customer.findFirst({
+        where: {
           storeId: store.id,
           phone: customerPhone,
         },
-      },
-      update: {
-        name: customerName,
-        address: customerAddress,
-      },
-      create: {
-        storeId: store.id,
-        name: customerName,
-        phone: customerPhone,
-        address: customerAddress,
-      },
-    });
+        select: { id: true, name: true, phone: true },
+      });
 
-    // 5. Create order with items
-    const order = await prisma.order.create({
-      data: {
-        storeId: store.id,
-        customerId: customer.id,
-        status: "NEW",
-        totalAmount: new Prisma.Decimal(totalAmount),
-        notes: notes || null,
-        orderNumber: generateOrderNumber(),
-        items: {
-          create: validatedItems.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-            unitPrice: new Prisma.Decimal(item.unitPrice),
-          })),
-        },
-      },
-      include: {
-        items: {
-          include: {
-            product: { select: { name: true } },
-            variant: { select: { color: true, size: true } },
+      if (!customerRecord) {
+        customerRecord = await tx.customer.create({
+          data: {
+            storeId: store.id,
+            name: customerName,
+            phone: customerPhone,
+            address: customerAddress || null,
+          },
+        });
+      } else {
+        customerRecord = await tx.customer.update({
+          where: { id: customerRecord.id },
+          data: {
+            name: customerName,
+            address: customerAddress || null,
+          },
+        });
+      }
+
+      // 5. Create order with items
+      const order = await tx.order.create({
+        data: {
+          storeId: store.id,
+          customerId: customerRecord.id,
+          status: "NEW",
+          totalAmount: totalAmount,
+          notes: notes || null,
+          items: {
+            create: validatedItems.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.unitPrice * item.quantity,
+              product: { connect: { id: item.productId } },
+            })),
           },
         },
-        customer: true,
-      },
+        include: {
+          items: {
+            include: {
+              product: { select: { name: true } },
+              variant: { select: { color: true, size: true } },
+            },
+          },
+          customer: true,
+        },
+      });
+
+      return { order, customer: customerRecord };
     });
 
     return successResponse(
       {
         order: {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          status: order.status,
-          totalAmount: order.totalAmount.toString(),
-          items: order.items.map((item) => ({
+          id: result.order.id,
+          orderNumber: result.order.id.slice(0, 8).toUpperCase(),
+          status: result.order.status,
+          totalAmount: result.order.totalAmount.toString(),
+          items: result.order.items.map((item) => ({
             id: item.id,
             productName: item.product.name,
             variantLabel:
@@ -303,11 +314,11 @@ export async function POST(
             unitPrice: item.unitPrice.toString(),
           })),
           customer: {
-            id: customer.id,
-            name: customer.name,
-            phone: customer.phone,
+            id: result.customer.id,
+            name: result.customer.name,
+            phone: result.customer.phone,
           },
-          createdAt: order.createdAt.toISOString(),
+          createdAt: result.order.createdAt.toISOString(),
         },
       },
       "تم إنشاء الطلب بنجاح",

@@ -8,7 +8,7 @@ async function main() {
   });
 
   console.log(
-    plans.map((plan) => ({
+    plans.map((plan: typeof plans[0]) => ({
       id: plan.id,
       name: plan.name,
       price: plan.price.toString(),

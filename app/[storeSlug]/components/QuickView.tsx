@@ -64,12 +64,14 @@ export function QuickViewButton({ product, storeSlug }: Props) {
         <EyeIcon className="h-4 w-4" />{" "}
       </button>{" "}
       <Modal
-        isOpen={isOpen}
+        open={isOpen}
         onClose={() => setIsOpen(false)}
-        title={product.name}
         size="lg"
       >
         {" "}
+        <h2 className="font-display text-xl font-bold text-ink mb-4">
+          {product.name}
+        </h2>
         <div className="grid gap-6 md:grid-cols-2">
           {" "}
           <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[#eee6d9]">
@@ -96,9 +98,6 @@ export function QuickViewButton({ product, storeSlug }: Props) {
                 {product.category.name}
               </p>
             )}{" "}
-            <h2 className="font-display text-xl font-bold text-ink">
-              {product.name}
-            </h2>{" "}
             {product.description && (
               <p className="mt-2 text-sm leading-relaxed text-ink-soft line-clamp-4">
                 {product.description}

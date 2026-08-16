@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useCart } from "../CartProvider";
+import { useCart } from "./CartProvider";
 import { Button } from "@/components/ui/Button";
 import { VariantSelector } from "../products/[productId]/components/VariantSelector";
 type Variant = {

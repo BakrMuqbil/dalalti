@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeftIcon, ReceiptIcon, UsersIcon } from "@/components/icons";
-import { OrderCard } from "../components/OrderCard";
+import { OrderCard } from "../../components/OrderCard";
 import { Spinner } from "@/components/feedback/Spinner";
 type Order = {
   id: string;
@@ -34,7 +34,7 @@ export function OrdersList({ storeSlug, storeName }: Props) {
     async function fetchOrders() {
       try {
         const response = await fetch(
-          `/api/public/stores/${storeSlug}/orders?phone=${encodeURIComponent(phone)}`,
+          `/api/public/stores/${storeSlug}/orders?phone=${encodeURIComponent(phone!)}`,
         );
         const data = await response.json();
         if (!response.ok || !data.success) {
