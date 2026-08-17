@@ -4,6 +4,7 @@ import { useCart } from "../../components/CartProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Spinner } from "@/components/feedback/Spinner";
 import {
   ArrowLeftIcon,
   ReceiptIcon,
@@ -19,7 +20,7 @@ function formatPrice(value: number) {
   );
 }
 export function CheckoutForm({ storeSlug, storeName }: Props) {
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, isHydrated } = useCart();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +30,15 @@ export function CheckoutForm({ storeSlug, storeName }: Props) {
     address: "",
     notes: "",
   });
+  if (!isHydrated) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
+          <Spinner size="lg" label="جاري تحميل السلة..." />
+        </div>
+      </div>
+    );
+  }
   if (items.length === 0) {
     return (
       <div className="flex min-h-screen flex-col bg-background">

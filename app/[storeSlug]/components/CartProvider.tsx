@@ -24,6 +24,7 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
+  isHydrated: boolean;
 }
 
 type CartAction =
@@ -113,8 +114,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'CLOSE_DRAWER':
       return { ...state, isOpen: false };
 
-    case 'HYDRATE':
-      return { ...state, items: action.payload };
+    case 'HYDRATE': {
+      if (!Array.isArray(action.payload)) {
+        return { ...state, isHydrated: true };
+      }
+      return { ...state, items: action.payload, isHydrated: true };
+    }
 
     default:
       return state;
@@ -126,6 +131,7 @@ interface CartContextValue {
   itemCount: number;
   total: number;
   isOpen: boolean;
+  isHydrated: boolean;
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (productId: string, variantId?: string | null) => void;
   updateQuantity: (
@@ -157,6 +163,7 @@ export function CartProvider({ storeSlug, children }: CartProviderProps) {
   const [state, dispatch] = useReducer(cartReducer, {
     items: [],
     isOpen: false,
+    isHydrated: false,
   });
 
   const { showToast } = useToast();
@@ -168,9 +175,11 @@ export function CartProvider({ storeSlug, children }: CartProviderProps) {
       if (raw) {
         const parsed = JSON.parse(raw) as CartItem[];
         dispatch({ type: 'HYDRATE', payload: parsed });
+      } else {
+        dispatch({ type: 'HYDRATE', payload: [] });
       }
     } catch {
-      /* ignore corrupt storage */
+      dispatch({ type: 'HYDRATE', payload: [] });
     }
   }, [storeSlug]);
 
@@ -241,6 +250,7 @@ export function CartProvider({ storeSlug, children }: CartProviderProps) {
     itemCount,
     total,
     isOpen: state.isOpen,
+    isHydrated: state.isHydrated,
     addItem,
     removeItem,
     updateQuantity,
