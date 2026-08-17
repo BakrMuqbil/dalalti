@@ -278,7 +278,6 @@ export async function POST(
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalPrice: item.unitPrice * item.quantity,
-              product: { connect: { id: item.productId } },
             })),
           },
         },

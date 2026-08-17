@@ -104,8 +104,8 @@ export const orderQuerySchema = z.object({
 
 /* ── Public Order (Customer Checkout) ── */
 export const publicOrderItemSchema = z.object({
-  productId: z.string().cuid(),
-  variantId: z.string().cuid().nullable().default(null),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().nullable().default(null),
   quantity: z.number().int().min(1).max(1000),
 });
 
