@@ -193,6 +193,12 @@ model Order {
   totalAmount  Decimal     @map("total_amount") @db.Decimal(12, 2)
   notes        String?
 
+  // Checkout 2 — Order Shipping Snapshot (immutable)
+  shippingCity     String?
+  shippingDistrict String?
+  shippingAddress  String?
+  shippingNotes    String?
+
   store     Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
   items     OrderItem[]

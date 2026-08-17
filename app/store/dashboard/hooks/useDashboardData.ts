@@ -25,6 +25,12 @@ export type DashboardOrder = {
     product: { id: string; name: string };
     variant?: { id: string; color?: string | null; size?: string | null } | null;
   }>;
+
+  // Checkout 2 — Shipping Address
+  shippingCity?: string;
+  shippingDistrict?: string;
+  shippingAddress?: string;
+  shippingNotes?: string;
 };
 
 export type DashboardCustomer = {

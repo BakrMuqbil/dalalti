@@ -112,6 +112,13 @@ export const publicOrderItemSchema = z.object({
 export const publicCreateOrderSchema = z.object({
   customerName: z.string().min(1).max(200),
   customerPhone: z.string().min(1).max(20),
+
+  // Checkout 2 — Shipping Address
+  shippingCity: z.string().min(1).max(100).trim(),
+  shippingDistrict: z.string().min(1).max(150).trim(),
+  shippingAddress: z.string().min(3).max(500).trim(),
+  shippingNotes: z.string().max(1000).trim().optional().or(z.literal("")),
+
   customerAddress: z.string().max(500).transform((v) => v.trim() || null).nullable().optional(),
   notes: z.string().max(2000).transform((v) => v.trim() || null).nullable().optional(),
   items: z.array(publicOrderItemSchema).min(1, "عناصر الطلب مطلوبة"),

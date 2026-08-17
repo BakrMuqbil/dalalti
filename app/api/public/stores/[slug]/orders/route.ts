@@ -142,7 +142,7 @@ export async function POST(
       return errorResponse(message, 400);
     }
 
-    const { customerName, customerPhone, customerAddress, notes, items } =
+    const { customerName, customerPhone, customerAddress, notes, items, shippingCity, shippingDistrict, shippingAddress, shippingNotes } =
       parsed.data;
 
     // 1. Verify store exists and is ACTIVE
@@ -263,7 +263,7 @@ export async function POST(
         });
       }
 
-      // 5. Create order with items
+      // 5. Create order with items and shipping snapshot
       const order = await tx.order.create({
         data: {
           storeId: store.id,
@@ -271,6 +271,13 @@ export async function POST(
           status: "NEW",
           totalAmount: totalAmount,
           notes: notes || null,
+
+          // Checkout 2 — Order Shipping Snapshot
+          shippingCity: shippingCity || null,
+          shippingDistrict: shippingDistrict || null,
+          shippingAddress: shippingAddress || null,
+          shippingNotes: shippingNotes || null,
+
           items: {
             create: validatedItems.map((item) => ({
               productId: item.productId,
@@ -317,6 +324,15 @@ export async function POST(
             name: result.customer.name,
             phone: result.customer.phone,
           },
+
+          // Checkout 2 — Shipping Snapshot
+          shipping: {
+            city: result.order.shippingCity,
+            district: result.order.shippingDistrict,
+            address: result.order.shippingAddress,
+            notes: result.order.shippingNotes,
+          },
+
           createdAt: result.order.createdAt.toISOString(),
         },
       },

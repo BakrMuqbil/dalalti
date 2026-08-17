@@ -10,6 +10,24 @@ import {
   ReceiptIcon,
   PackageCheckIcon,
 } from "@/components/icons";
+
+// Checkout 2 — Inline MapPinIcon (not exported from icons)
+function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -29,6 +47,10 @@ export function CheckoutForm({ storeSlug, storeName }: Props) {
     phone: "",
     address: "",
     notes: "",
+    shippingCity: "",
+    shippingDistrict: "",
+    shippingAddress: "",
+    shippingNotes: "",
   });
   if (!isHydrated) {
     return (
@@ -67,6 +89,14 @@ export function CheckoutForm({ storeSlug, storeName }: Props) {
       setError("الاسم ورقم الهاتف مطلوبان");
       return;
     }
+    if (
+      !formData.shippingCity.trim() ||
+      !formData.shippingDistrict.trim() ||
+      !formData.shippingAddress.trim()
+    ) {
+      setError("المدينة والمنطقة والعنوان التفصيلي مطلوبة");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/public/stores/${storeSlug}/orders`, {
@@ -77,6 +107,13 @@ export function CheckoutForm({ storeSlug, storeName }: Props) {
           customerPhone: formData.phone,
           customerAddress: formData.address || null,
           notes: formData.notes || null,
+
+          // Checkout 2 — Shipping Address
+          shippingCity: formData.shippingCity,
+          shippingDistrict: formData.shippingDistrict,
+          shippingAddress: formData.shippingAddress,
+          shippingNotes: formData.shippingNotes || null,
+
           items: items.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
@@ -133,7 +170,7 @@ export function CheckoutForm({ storeSlug, storeName }: Props) {
               <div className="rounded-2xl border border-line bg-surface p-6">
                 {" "}
                 <h2 className="mb-4 text-lg font-bold text-ink">
-                  معلومات التوصيل
+                  معلومات العميل
                 </h2>{" "}
                 <div className="space-y-4">
                   {" "}
@@ -155,25 +192,55 @@ export function CheckoutForm({ storeSlug, storeName }: Props) {
                     placeholder="مثال: 967700000000"
                     required
                   />{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* Checkout 2 — Shipping Address */}{" "}
+              <div className="rounded-2xl border border-line bg-surface p-6">
+                {" "}
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink">
+                  <MapPinIcon className="h-5 w-5 text-brand" />
+                  عنوان الشحن
+                </h2>{" "}
+                <div className="space-y-4">
+                  {" "}
                   <Input
-                    label="العنوان"
-                    value={formData.address}
+                    label="المدينة"
+                    value={formData.shippingCity}
                     onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
+                      setFormData({ ...formData, shippingCity: e.target.value })
                     }
-                    placeholder="المدينة، الحي، الشارع"
+                    placeholder="صنعاء"
+                    required
+                  />{" "}
+                  <Input
+                    label="المنطقة / الحي"
+                    value={formData.shippingDistrict}
+                    onChange={(e) =>
+                      setFormData({ ...formData, shippingDistrict: e.target.value })
+                    }
+                    placeholder="حدة"
+                    required
+                  />{" "}
+                  <Input
+                    label="العنوان التفصيلي"
+                    value={formData.shippingAddress}
+                    onChange={(e) =>
+                      setFormData({ ...formData, shippingAddress: e.target.value })
+                    }
+                    placeholder="شارع الجزائر، جوار المستشفى، بناية رقم ٥"
+                    required
                   />{" "}
                   <div>
                     {" "}
                     <label className="mb-1 block text-sm font-medium text-ink">
-                      ملاحظات (اختياري)
+                      ملاحظات التوصيل (اختياري)
                     </label>{" "}
                     <textarea
-                      value={formData.notes}
+                      value={formData.shippingNotes}
                       onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
+                        setFormData({ ...formData, shippingNotes: e.target.value })
                       }
-                      placeholder="أي ملاحظات خاصة بالطلب..."
+                      placeholder="الاتصال قبل الوصول، الباب الخلفي، إلخ..."
                       rows={3}
                       className="w-full rounded-xl border border-line bg-background px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-gold focus:ring-2 focus:ring-gold/15"
                     />{" "}
