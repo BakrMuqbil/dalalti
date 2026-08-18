@@ -7,7 +7,6 @@ import { CategoryFilter } from "./components/CategoryFilter";
 import { ProductFilterBar } from "./components/ProductFilterBar";
 import { ProductGrid } from "./components/ProductGrid";
 import { StoreFooter } from "./components/StoreFooter";
-import { StorefrontWrapper } from "./components/StorefrontWrapper";
 
 export const dynamic = "force-dynamic";
 
@@ -143,31 +142,29 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
   }));
 
   return (
-    <StorefrontWrapper storeSlug={store.slug}>
-      <div className="flex min-h-screen flex-col bg-background">
-        <StoreHeader
-          storeName={store.name}
+    <div className="flex min-h-screen flex-col bg-background">
+      <StoreHeader
+        storeName={store.name}
+        storeSlug={store.slug}
+        logoUrl={store.logoUrl}
+        phone={store.phone}
+      />
+      <StoreHero storeName={store.name} description={store.description} />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <CategoryFilter
+          categories={categories}
+          activeCategory={categoryId || null}
           storeSlug={store.slug}
-          logoUrl={store.logoUrl}
-          phone={store.phone}
         />
-        <StoreHero storeName={store.name} description={store.description} />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-          <CategoryFilter
-            categories={categories}
-            activeCategory={categoryId || null}
-            storeSlug={store.slug}
-          />
-          <ProductFilterBar
-            storeSlug={store.slug}
-            initialQuery={q || ""}
-            initialSort={sort || "newest"}
-            initialAvailability={availability || "all"}
-          />
-          <ProductGrid products={productList} storeSlug={store.slug} />
-        </main>
-        <StoreFooter storeName={store.name} />
-      </div>
-    </StorefrontWrapper>
+        <ProductFilterBar
+          storeSlug={store.slug}
+          initialQuery={q || ""}
+          initialSort={sort || "newest"}
+          initialAvailability={availability || "all"}
+        />
+        <ProductGrid products={productList} storeSlug={store.slug} />
+      </main>
+      <StoreFooter storeName={store.name} />
+    </div>
   );
 }

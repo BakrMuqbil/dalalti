@@ -9,7 +9,6 @@ import Link from "next/link";
 import { ImageGallery } from "./components/ImageGallery";
 import { ShareButton } from "./components/ShareButton";
 import { ProductActions } from "../../components/ProductActions";
-import { StorefrontWrapper } from "../../components/StorefrontWrapper";
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ storeSlug: string; productId: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -105,12 +104,11 @@ export default async function ProductDetailPage({ params }: Props) {
     categoryName: product.category?.name,
   });
   return (
-    <StorefrontWrapper storeSlug={store.slug}>
-      {" "}
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />{" "}
+      />
       <div className="flex min-h-screen flex-col bg-background">
         {" "}
         <StoreHeader
@@ -185,7 +183,7 @@ export default async function ProductDetailPage({ params }: Props) {
           </article>{" "}
         </main>{" "}
         <StoreFooter storeName={store.name} />{" "}
-      </div>{" "}
-    </StorefrontWrapper>
+      </div>
+    </>
   );
 }

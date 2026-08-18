@@ -18,25 +18,25 @@ export type DashboardOrder = {
     id: string;
     name: string;
     phone?: string | null;
+    email?: string | null;
   };
+  shipping?: { city: string | null; area: string | null; address: string | null; notes: string | null };
+  deliveryMethod?: string;
+  paymentMethod?: string;
+  shippingFee?: string;
   items: Array<{
     id: string;
     quantity: number;
     product: { id: string; name: string };
     variant?: { id: string; color?: string | null; size?: string | null } | null;
   }>;
-
-  // Checkout 2 — Shipping Address
-  shippingCity?: string;
-  shippingDistrict?: string;
-  shippingAddress?: string;
-  shippingNotes?: string;
 };
 
 export type DashboardCustomer = {
   id: string;
   name: string;
   phone: string;
+  email?: string | null;
   createdAt: string;
   _count?: { orders: number };
 };

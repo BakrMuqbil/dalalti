@@ -57,6 +57,7 @@ export const updateCategorySchema = z.object({
 export const createCustomerSchema = z.object({
   name: nameSchema,
   phone: z.string().min(1).max(20),
+  email: emailSchema.optional(),
   address: optionalNameSchema,
   notes: z.string().max(2000).transform((v) => v.trim() || null).nullable().optional(),
 });
@@ -64,6 +65,7 @@ export const createCustomerSchema = z.object({
 export const updateCustomerSchema = z.object({
   name: nameSchema.optional(),
   phone: z.string().min(1).max(20).optional(),
+  email: emailSchema.optional(),
   address: optionalNameSchema.optional(),
   notes: z.string().max(2000).transform((v) => v.trim() || null).nullable().optional(),
 });
@@ -110,16 +112,15 @@ export const publicOrderItemSchema = z.object({
 });
 
 export const publicCreateOrderSchema = z.object({
-  customerName: z.string().min(1).max(200),
-  customerPhone: z.string().min(1).max(20),
-
-  // Checkout 2 — Shipping Address
-  shippingCity: z.string().min(1).max(100).trim(),
-  shippingDistrict: z.string().min(1).max(150).trim(),
-  shippingAddress: z.string().min(3).max(500).trim(),
-  shippingNotes: z.string().max(1000).trim().optional().or(z.literal("")),
-
-  customerAddress: z.string().max(500).transform((v) => v.trim() || null).nullable().optional(),
+  customerName: z.string().trim().min(1, "الاسم الكامل مطلوب").max(200),
+  customerPhone: z.string().trim().min(1, "رقم الهاتف مطلوب").max(20),
+  customerEmail: emailSchema.optional(),
+  shippingCity: z.string().trim().min(1, "المحافظة / المدينة مطلوبة").max(120),
+  shippingArea: z.string().trim().min(1, "المنطقة / الحي مطلوب").max(160),
+  shippingAddress: z.string().trim().min(1, "العنوان بالتفصيل مطلوب").max(500),
+  shippingNotes: z.string().max(1000).transform((v) => v.trim() || null).nullable().optional(),
+  deliveryMethod: z.literal("DELIVERY").default("DELIVERY"),
+  paymentMethod: z.literal("CASH_ON_DELIVERY").default("CASH_ON_DELIVERY"),
   notes: z.string().max(2000).transform((v) => v.trim() || null).nullable().optional(),
   items: z.array(publicOrderItemSchema).min(1, "عناصر الطلب مطلوبة"),
 });

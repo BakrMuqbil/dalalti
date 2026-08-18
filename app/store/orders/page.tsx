@@ -6,7 +6,6 @@ import {
   FilterIcon,
   ChevronLeftIcon,
   ChevronDownIcon,
-  MapPinIcon,
 } from "@/components/icons";
 import { Spinner } from "@/components/feedback/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -170,6 +169,17 @@ export default function OrdersPage() {
                         ))}
                       </div>
                     </div>
+                    <div className="rounded-xl bg-background p-4">
+                      <p className="text-xs font-semibold text-ink-soft">بيانات العميل والتوصيل</p>
+                      <div className="mt-2 space-y-1.5 text-sm">
+                        <p className="font-semibold text-ink">{order.customer?.name}</p>
+                        <p className="text-ink-soft" dir="ltr">{order.customer?.phone || "—"}</p>
+                        {order.customer?.email && <p className="text-ink-soft">{order.customer.email}</p>}
+                        <p className="pt-1 text-ink"><span className="text-ink-soft">العنوان:</span> {[order.shipping?.city, order.shipping?.area, order.shipping?.address].filter(Boolean).join(" - ") || "—"}</p>
+                        <p className="text-ink"><span className="text-ink-soft">التوصيل:</span> {order.deliveryMethod === "DELIVERY" ? "التوصيل إلى العنوان" : order.deliveryMethod || "—"}</p>
+                        <p className="text-ink"><span className="text-ink-soft">الدفع:</span> {order.paymentMethod === "CASH_ON_DELIVERY" ? "الدفع عند الاستلام" : order.paymentMethod || "—"}</p>
+                      </div>
+                    </div>
                     <div>
                       <p className="text-xs font-semibold text-ink-soft">
                         تحديث الحالة
@@ -198,42 +208,6 @@ export default function OrdersPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Checkout 2 — Shipping Address */}
-                  {(order.shippingCity || order.shippingDistrict || order.shippingAddress) && (
-                    <div className="mt-4 rounded-xl border border-line bg-background p-4">
-                      <p className="mb-2 flex items-center gap-2 text-xs font-semibold text-ink-soft">
-                        <MapPinIcon width={14} height={14} className="text-brand" />
-                        عنوان التوصيل
-                      </p>
-                      <div className="space-y-1 text-sm text-ink">
-                        {order.shippingCity && (
-                          <p>
-                            <span className="text-ink-soft">المدينة:</span>{" "}
-                            {order.shippingCity}
-                          </p>
-                        )}
-                        {order.shippingDistrict && (
-                          <p>
-                            <span className="text-ink-soft">المنطقة:</span>{" "}
-                            {order.shippingDistrict}
-                          </p>
-                        )}
-                        {order.shippingAddress && (
-                          <p>
-                            <span className="text-ink-soft">العنوان:</span>{" "}
-                            {order.shippingAddress}
-                          </p>
-                        )}
-                        {order.shippingNotes && (
-                          <p>
-                            <span className="text-ink-soft">ملاحظات:</span>{" "}
-                            {order.shippingNotes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

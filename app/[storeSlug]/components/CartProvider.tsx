@@ -6,6 +6,7 @@ import {
   useReducer,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from 'react';
 import { useToast } from '@/hooks/useToast';
@@ -24,7 +25,6 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  isHydrated: boolean;
 }
 
 type CartAction =
@@ -114,12 +114,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'CLOSE_DRAWER':
       return { ...state, isOpen: false };
 
-    case 'HYDRATE': {
-      if (!Array.isArray(action.payload)) {
-        return { ...state, isHydrated: true };
-      }
-      return { ...state, items: action.payload, isHydrated: true };
-    }
+    case 'HYDRATE':
+      return { ...state, items: action.payload };
 
     default:
       return state;
@@ -131,7 +127,6 @@ interface CartContextValue {
   itemCount: number;
   total: number;
   isOpen: boolean;
-  isHydrated: boolean;
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (productId: string, variantId?: string | null) => void;
   updateQuantity: (
@@ -163,10 +158,16 @@ export function CartProvider({ storeSlug, children }: CartProviderProps) {
   const [state, dispatch] = useReducer(cartReducer, {
     items: [],
     isOpen: false,
-    isHydrated: false,
   });
 
   const { showToast } = useToast();
+
+  // يمنع كتابة (persist) أي شيء إلى localStorage قبل اكتمال أول قراءة
+  // (hydrate) فعليًا. بدون هذا الحارس، إعادة الرندر الأولى للمكوّن (state
+  // الابتدائي items: []) قد تُشغّل effect الـ persist قبل effect الـ
+  // hydrate، فتُكتب مصفوفة فارغة فوق بيانات السلة المحفوظة فعليًا —
+  // وهذا كان يُظهر السلة فارغة عند الوصول المباشر لصفحة /checkout.
+  const hasHydrated = useRef(false);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -175,16 +176,18 @@ export function CartProvider({ storeSlug, children }: CartProviderProps) {
       if (raw) {
         const parsed = JSON.parse(raw) as CartItem[];
         dispatch({ type: 'HYDRATE', payload: parsed });
-      } else {
-        dispatch({ type: 'HYDRATE', payload: [] });
       }
     } catch {
-      dispatch({ type: 'HYDRATE', payload: [] });
+      /* ignore corrupt storage */
+    } finally {
+      hasHydrated.current = true;
     }
   }, [storeSlug]);
 
-  // Persist to localStorage on change
+  // Persist to localStorage on change — لكن فقط بعد اكتمال الـ hydrate
   useEffect(() => {
+    if (!hasHydrated.current) return;
+
     try {
       localStorage.setItem(
         getStorageKey(storeSlug),
@@ -250,7 +253,6 @@ export function CartProvider({ storeSlug, children }: CartProviderProps) {
     itemCount,
     total,
     isOpen: state.isOpen,
-    isHydrated: state.isHydrated,
     addItem,
     removeItem,
     updateQuantity,

@@ -7,6 +7,7 @@ import { readJson, fetchWithAuth } from '@/lib/api-client';
 import type { DashboardCustomer } from '@/app/store/dashboard/hooks/useDashboardData';
 
 export type Customer = DashboardCustomer & {
+  email?: string | null;
   address?: string | null;
   notes?: string | null;
 };
@@ -30,6 +31,7 @@ export function useCustomers() {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function useCustomers() {
   function resetForm() {
     setName('');
     setPhone('');
+    setEmail('');
     setAddress('');
     setNotes('');
     setEditingId(null);
@@ -92,6 +95,7 @@ export function useCustomers() {
         body: JSON.stringify({
           name: trimmedName,
           phone: trimmedPhone,
+          email: email.trim(),
           address: address.trim() || null,
           notes: notes.trim() || null,
         }),
@@ -121,6 +125,7 @@ export function useCustomers() {
     setEditingId(customer.id);
     setName(customer.name);
     setPhone(customer.phone);
+    setEmail(customer.email ?? '');
     setAddress(customer.address ?? '');
     setNotes(customer.notes ?? '');
   }
@@ -155,6 +160,8 @@ export function useCustomers() {
     setName,
     phone,
     setPhone,
+    email,
+    setEmail,
     address,
     setAddress,
     notes,

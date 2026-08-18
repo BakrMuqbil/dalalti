@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/app/generated/prisma/client";
 import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
@@ -65,7 +66,12 @@ export async function GET(request: Request) {
       take: limit,
     });
 
-    return NextResponse.json({ success: true, customers });
+    const customerIds = customers.map((customer) => customer.id);
+    const emailRows = customerIds.length
+      ? await prisma.$queryRaw<Array<{ id: string; email: string | null }>>`SELECT id::text, email FROM customers WHERE id IN (${Prisma.join(customerIds)})`
+      : [];
+    const emailMap = new Map(emailRows.map((row) => [row.id, row.email]));
+    return NextResponse.json({ success: true, customers: customers.map((customer) => ({ ...customer, email: emailMap.get(customer.id) ?? null })) });
   } catch (error) {
     return handleApiError(error);
   }
@@ -107,11 +113,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message }, { status: 400 });
     }
 
-    const { name, phone, address, notes } = parsed.data;
+    const { name, phone, email, address, notes } = parsed.data;
 
     const customer = await prisma.customer.create({
       data: { storeId: store.id, name, phone, address, notes },
     });
+    if (email !== undefined) {
+      await prisma.$executeRaw`UPDATE customers SET email = ${email} WHERE id = ${customer.id}::uuid`;
+    }
 
     return NextResponse.json(
       { success: true, message: "تم إنشاء العميل بنجاح", customer },

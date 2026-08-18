@@ -171,6 +171,7 @@ model Customer {
   storeId String  @map("store_id") @db.Uuid
   name    String
   phone   String
+  email   String?
   address String?
   notes   String?
 
@@ -190,14 +191,16 @@ model Order {
   storeId      String      @map("store_id") @db.Uuid
   customerId   String      @map("customer_id") @db.Uuid
   status       OrderStatus @default(NEW)
-  totalAmount  Decimal     @map("total_amount") @db.Decimal(12, 2)
-  notes        String?
-
-  // Checkout 2 — Order Shipping Snapshot (immutable)
-  shippingCity     String?
-  shippingDistrict String?
-  shippingAddress  String?
-  shippingNotes    String?
+  totalAmount       Decimal @map("total_amount") @db.Decimal(12, 2)
+  notes             String?
+  shippingCity      String? @map("shipping_city")
+  shippingArea      String? @map("shipping_area")
+  shippingAddress   String? @map("shipping_address")
+  shippingNotes     String? @map("shipping_notes")
+  deliveryMethod    String  @default("DELIVERY") @map("delivery_method")
+  paymentMethod     String  @default("CASH_ON_DELIVERY") @map("payment_method")
+  shippingFee       Decimal @default(0) @map("shipping_fee") @db.Decimal(12, 2)
+  publicAccessToken String? @unique @map("public_access_token")
 
   store     Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
@@ -217,7 +220,7 @@ model OrderItem {
   id         String  @id @default(uuid()) @db.Uuid
   orderId    String  @map("order_id") @db.Uuid
   productId  String  @map("product_id") @db.Uuid
-  variantId  String? @map("variant_id")
+  variantId  String? @map("variant_id") @db.Uuid
   quantity   Int
   unitPrice  Decimal @map("unit_price") @db.Decimal(12, 2)
   totalPrice Decimal @map("total_price") @db.Decimal(12, 2)

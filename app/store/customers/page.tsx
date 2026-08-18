@@ -21,12 +21,14 @@ export default function CustomersPage() {
     searchQuery,
     name,
     phone,
+    email,
     address,
     notes,
     editingId,
     setSearchQuery,
     setName,
     setPhone,
+    setEmail,
     setAddress,
     setNotes,
     handleSubmit,
@@ -162,6 +164,9 @@ export default function CustomersPage() {
                     الهاتف
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
+                    البريد
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
                     الطلبات
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-ink-soft">
@@ -191,6 +196,9 @@ export default function CustomersPage() {
                       dir="ltr"
                     >
                       {customer.phone}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-ink-soft">
+                      {customer.email || "—"}
                     </td>
                     <td className="px-5 py-4 text-sm font-medium text-ink">
                       {customer._count?.orders ?? 0}

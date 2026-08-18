@@ -34,7 +34,8 @@ export async function GET(_request: Request, context: RouteContext) {
     const { id } = await context.params;
     const result = await getOwnedCustomer(auth.userId, id);
     if (result.error) return result.error;
-    return NextResponse.json({ success: true, customer: result.customer });
+    const emailRows = await prisma.$queryRaw<Array<{ email: string | null }>>`SELECT email FROM customers WHERE id = ${result.customer.id}::uuid LIMIT 1`;
+    return NextResponse.json({ success: true, customer: { ...result.customer, email: emailRows[0]?.email ?? null } });
   } catch (error) {
     return handleApiError(error);
   }
@@ -63,6 +64,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const data = parsed.data;
+    const { email, ...customerData } = data;
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ success: false, message: "لا توجد بيانات لتحديثها" }, { status: 400 });
@@ -70,11 +72,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const customer = await prisma.customer.update({
       where: { id },
-      data,
+      data: customerData,
       include: { _count: { select: { orders: true } } },
     });
 
-    return NextResponse.json({ success: true, message: "تم تحديث العميل", customer });
+    if (email !== undefined) {
+      await prisma.$executeRaw`UPDATE customers SET email = ${email} WHERE id = ${customer.id}::uuid`;
+    }
+    return NextResponse.json({ success: true, message: "تم تحديث العميل", customer: { ...customer, email: email ?? null } });
   } catch (error) {
     return handleApiError(error);
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/app/generated/prisma/client";
 import { handleApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireStoreOwner } from "@/lib/require-auth";
@@ -63,9 +64,23 @@ export async function GET(request: Request) {
       take: limit,
     });
 
+    const metadataRows = await prisma.$queryRaw<Array<{ id: string; customer_email: string | null; shipping_city: string | null; shipping_area: string | null; shipping_address: string | null; shipping_notes: string | null; delivery_method: string; payment_method: string; shipping_fee: string }>>`
+      SELECT id::text, customer_email, shipping_city, shipping_area, shipping_address, shipping_notes, delivery_method, payment_method, shipping_fee::text
+      FROM (
+        SELECT o.*, c.email AS customer_email
+        FROM orders o
+        LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE o.store_id = ${store.id}::uuid
+      ) order_meta
+      ORDER BY created_at DESC
+    `;
+    const metadataMap = new Map(metadataRows.map((row) => [row.id, row]));
+
     return NextResponse.json({
       success: true,
-      orders: orders.map((order: any) => ({
+      orders: orders.map((order: any) => {
+        const meta = metadataMap.get(order.id);
+        return {
         ...order,
         totalAmount: order.totalAmount.toString(),
         items: order.items.map((item: any) => ({
@@ -75,7 +90,18 @@ export async function GET(request: Request) {
           product: { ...item.product, price: item.product.price.toString() },
           variant: item.variant ? { ...item.variant, price: item.variant.price?.toString() ?? null } : null,
         })),
-      })),
+        customer: order.customer ? { ...order.customer, email: meta?.customer_email ?? null } : order.customer,
+        shipping: {
+          city: meta?.shipping_city ?? null,
+          area: meta?.shipping_area ?? null,
+          address: meta?.shipping_address ?? null,
+          notes: meta?.shipping_notes ?? null,
+        },
+        deliveryMethod: meta?.delivery_method ?? "DELIVERY",
+        paymentMethod: meta?.payment_method ?? "CASH_ON_DELIVERY",
+        shippingFee: meta?.shipping_fee ?? "0",
+        };
+      }),
     });
   } catch (error) {
     return handleApiError(error);
