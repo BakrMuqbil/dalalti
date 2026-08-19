@@ -4,6 +4,7 @@ import { CogIcon, UploadIcon, TrashIcon, GlobeIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/feedback/Spinner";
 import { useStoreSettings } from "./hooks/useStoreSettings";
+import { StoreThemeSettings } from "./components/StoreThemeSettings";
 export default function SettingsPage() {
     const {
         store,
@@ -122,6 +123,9 @@ export default function SettingsPage() {
                     </div>{" "}
                 </div>{" "}
             </div>{" "}
+            <div className="mb-5">
+                <StoreThemeSettings />
+            </div>
             <form onSubmit={handleSubmit} className="space-y-5">
                 {" "}
                 <div className="rounded-2xl border border-line bg-surface p-6 shadow-sm">

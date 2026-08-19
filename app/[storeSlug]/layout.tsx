@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { buildStoreMetadata, buildStoreJsonLd } from '@/lib/metadata';
-import { ReactNode } from 'react';
+import { ReactNode, type CSSProperties } from 'react';
 import { StorefrontWrapper } from './components/StorefrontWrapper';
 
 type Props = {
@@ -53,7 +53,23 @@ export default async function StoreLayout({ params, children }: Props) {
   const { storeSlug } = await params;
   const store = await prisma.store.findUnique({
     where: { slug: storeSlug, status: 'ACTIVE' },
-    select: { id: true, name: true, description: true, logoUrl: true, slug: true, phone: true },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      logoUrl: true,
+      slug: true,
+      phone: true,
+      theme: {
+        select: {
+          primaryColor: true,
+          secondaryColor: true,
+          accentColor: true,
+          backgroundColor: true,
+          textColor: true,
+        },
+      },
+    },
   });
 
   if (!store) {
@@ -68,8 +84,29 @@ export default async function StoreLayout({ params, children }: Props) {
     phone: store.phone,
   });
 
+  const theme = store.theme ?? {
+    primaryColor: "#7A5C3E",
+    secondaryColor: "#5E4530",
+    accentColor: "#B8862E",
+    backgroundColor: "#FAF7F2",
+    textColor: "#2B2420",
+  };
+
+  const themeStyle = {
+    "--store-primary": theme.primaryColor,
+    "--store-secondary": theme.secondaryColor,
+    "--store-accent": theme.accentColor,
+    "--store-background": theme.backgroundColor,
+    "--store-text": theme.textColor,
+    "--color-brand": theme.primaryColor,
+    "--color-brand-deep": theme.secondaryColor,
+    "--color-gold": theme.accentColor,
+    "--color-background": theme.backgroundColor,
+    "--color-ink": theme.textColor,
+  } as CSSProperties;
+
   return (
-    <div dir="rtl" className="min-h-screen bg-background">
+    <div dir="rtl" style={themeStyle} className="min-h-screen bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

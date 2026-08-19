@@ -1,5 +1,5 @@
 "use client";
-
+import StoreShareCard from "./components/StoreShareCard";
 import Link from "next/link";
 import {
   BoxIcon,
@@ -51,6 +51,7 @@ export default function StoreDashboardPage() {
         unavailableProducts={unavailableProducts}
         deliveredRevenue={deliveredRevenue}
       />
+      <StoreShareCard storeSlug={store.slug} storeName={store.name} />
 
       {error && (
         <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-danger/20 bg-danger-bg px-4 py-3 text-sm text-danger sm:flex-row sm:items-center sm:justify-between">

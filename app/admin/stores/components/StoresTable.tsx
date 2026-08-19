@@ -1,1 +1,274 @@
-import { Spinner } from '@/components/feedback/Spinner' ; import { EmptyState } from '@/components/ui/EmptyState' ; import { Button } from '@/components/ui/Button' ; import { Badge } from '@/components/ui/Badge' ; import { StoreIcon } from '@/components/icons' ; import type { Store } from '../hooks/useAdminStores' ; function formatDate(value: string) { return new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(value)) } function storeStatus(status: Store['status']) { return status === 'ACTIVE' ? 'نشط' : 'موقوف' } function subscriptionStatus(status: NonNullable<Store['subscription']>['status']) { if (status === 'ACTIVE') return 'نشط' ; if (status === 'EXPIRED') return 'منتهي' ; return 'ملغى' } type Props = { stores: Store[] ; loading: boolean ; onDetails: (store: Store) => void } ; export function StoresTable({ stores, loading, onDetails }: Props) { const headings = ['المتجر', 'صاحب المتجر', 'الباقة', 'الاشتراك', 'انتهاء الاشتراك', 'الحالة', 'الإجراء'] ; return ( <section className='overflow-hidden rounded-2xl border border-line bg-surface shadow-sm'> <div className='border-b border-line px-6 py-5'> <div className='flex items-end justify-between gap-4'> <div> <span className='text-xs font-medium text-gold'>STORES</span> <h2 className='mt-1 font-semibold text-ink'>المتاجر المسجلة</h2> <p className='mt-1 text-sm text-ink-soft'>البيانات الحالية من قاعدة البيانات</p> </div> {!loading && <span className='rounded-full bg-background px-3 py-1 font-mono text-xs text-ink-soft'>{stores.length} متجر</span>} </div> </div> {loading ? ( <Spinner label='جاري تحميل المتاجر...' /> ) : stores.length === 0 ? ( <EmptyState icon={<StoreIcon width={28} height={28} className='text-ink-soft' />} title='لا توجد متاجر' description='لم يتم إنشاء أي متجر حتى الآن.' /> ) : ( <> {/* Desktop Table */} <div className='hidden overflow-x-auto md:block'> <table className='w-full min-w-[900px] text-right'> <thead className='bg-background'><tr className='border-b border-line'>{headings.map((heading) => <th key={heading} scope='col' className='px-6 py-4 text-xs font-semibold text-ink-soft'>{heading}</th>)}</tr></thead> <tbody>{stores.map((store) => <tr key={store.id} className='border-b border-line last:border-b-0 hover:bg-background/70'> <td className='px-6 py-5'><div className='font-semibold text-ink'>{store.name}</div><div className='mt-1 font-mono text-xs text-ink-soft/80'>/{store.slug}</div></td> <td className='px-6 py-5'><div className='font-medium text-ink'>{store.owner.name}</div><div className='mt-1 text-xs text-ink-soft'>{store.owner.phone || store.owner.email || '—'}</div></td> <td className='px-6 py-5'>{store.subscription ? <><div className='font-medium text-ink'>{store.subscription.plan.name}</div><div className='mt-1 font-mono text-xs text-ink-soft'>{store.subscription.plan.price} ريال</div></> : <span className='text-sm text-ink-soft/80'>بدون اشتراك</span>}</td> <td className='px-6 py-5'>{store.subscription ? <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${store.subscription.status === 'ACTIVE' ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'}`}>{subscriptionStatus(store.subscription.status)}</span> : '—'}</td> <td className='px-6 py-5 text-sm text-ink-soft'>{store.subscription ? formatDate(store.subscription.endsAt) : '—'}</td> <td className='px-6 py-5'><Badge tone={store.status === 'ACTIVE' ? 'success' : 'neutral'} className='px-3 py-1 text-xs font-semibold'>{storeStatus(store.status)}</Badge></td> <td className='px-6 py-5'><Button type='button' variant='secondary' size='sm' onClick={() => onDetails(store)} className='bg-white text-ink-soft hover:border-gold hover:text-ink'>إدارة الحساب</Button></td> </tr>)}</tbody> </table> </div> {/* Mobile Cards */} <div className='grid gap-3 p-4 md:hidden'> {stores.map((store) => ( <article key={store.id} className='rounded-xl border border-line bg-white p-4 shadow-sm'> <div className='flex items-start justify-between gap-3'> <div className='min-w-0'> <h3 className='font-semibold text-ink'>{store.name}</h3> <p className='mt-0.5 font-mono text-xs text-ink-soft'>/{store.slug}</p> </div> <Badge tone={store.status === 'ACTIVE' ? 'success' : 'neutral'} className='shrink-0 px-2.5 py-0.5 text-xs font-semibold'> {storeStatus(store.status)} </Badge> </div> <div className='mt-3 space-y-2 text-sm'> <div className='flex justify-between gap-2'> <span className='text-ink-soft'>المالك:</span> <span className='font-medium text-ink'>{store.owner.name}</span> </div> <div className='flex justify-between gap-2'> <span className='text-ink-soft'>التواصل:</span> <span className='text-ink'>{store.owner.phone || store.owner.email || '—'}</span> </div> {store.subscription ? ( <> <div className='flex justify-between gap-2'> <span className='text-ink-soft'>الباقة:</span> <span className='font-medium text-ink'>{store.subscription.plan.name}</span> </div> <div className='flex justify-between gap-2'> <span className='text-ink-soft'>السعر:</span> <span className='font-mono text-ink'>{store.subscription.plan.price} ريال</span> </div> <div className='flex justify-between gap-2'> <span className='text-ink-soft'>الاشتراك:</span> <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${store.subscription.status === 'ACTIVE' ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'}`}> {subscriptionStatus(store.subscription.status)} </span> </div> <div className='flex justify-between gap-2'> <span className='text-ink-soft'>الانتهاء:</span> <span className='text-ink'>{formatDate(store.subscription.endsAt)}</span> </div> </> ) : ( <div className='flex justify-between gap-2'> <span className='text-ink-soft'>الاشتراك:</span> <span className='text-ink-soft/80'>بدون اشتراك</span> </div> )} </div> <div className='mt-4'> <Button type='button' variant='secondary' size='sm' onClick={() => onDetails(store)} className='w-full bg-white text-ink-soft hover:border-gold hover:text-ink'> إدارة الحساب </Button> </div> </article> ))} </div> </> )} </section> ) ; }
+import { Spinner } from "@/components/feedback/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { StoreIcon } from "@/components/icons";
+import type { Store } from "../hooks/useAdminStores";
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ar-SA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+function storeStatus(status: Store["status"]) {
+  return status === "ACTIVE" ? "نشط" : "موقوف";
+}
+function subscriptionStatus(
+  status: NonNullable<Store["subscription"]>["status"],
+) {
+  if (status === "ACTIVE") return "نشط";
+  if (status === "EXPIRED") return "منتهي";
+  return "ملغى";
+}
+type Props = {
+  stores: Store[];
+  loading: boolean;
+  onDetails: (store: Store) => void;
+};
+export function StoresTable({ stores, loading, onDetails }: Props) {
+  const headings = [
+    "المتجر",
+    "صاحب المتجر",
+    "الباقة",
+    "الاشتراك",
+    "انتهاء الاشتراك",
+    "الحالة",
+    "الإجراء",
+  ];
+  return (
+    <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+      {""}
+      <div className="border-b border-line px-6 py-5">
+        {""}
+        <div className="flex items-end justify-between gap-4">
+          {""}
+          <div>
+            {""}
+            <span className="text-xs font-medium text-gold">STORES</span>{""}
+            <h2 className="mt-1 font-semibold text-ink">المتاجر المسجلة</h2>{""}
+            <p className="mt-1 text-sm text-ink-soft">
+              البيانات الحالية من قاعدة البيانات
+            </p>{""}
+          </div>{""}
+          {!loading && (
+            <span className="rounded-full bg-background px-3 py-1 font-mono text-xs text-ink-soft">
+              {stores.length} متجر
+            </span>
+          )}{""}
+        </div>{""}
+      </div>{""}
+      {loading ? (
+        <Spinner label="جاري تحميل المتاجر..." />
+      ) : stores.length === 0 ? (
+        <EmptyState
+          icon={<StoreIcon width={28} height={28} className="text-ink-soft" />}
+          title="لا توجد متاجر"
+          description="لم يتم إنشاء أي متجر حتى الآن."
+        />
+      ) : (
+        <>
+          {""}
+          {/* Desktop Table */}{""}
+          <div className="hidden overflow-x-auto md:block">
+            {""}
+            <table className="w-full min-w-[900px] text-right">
+              {""}
+              <thead className="bg-background">
+                <tr className="border-b border-line">
+                  {headings.map((heading) => (
+                    <th
+                      key={heading}
+                      scope="col"
+                      className="px-6 py-4 text-xs font-semibold text-ink-soft"
+                    >
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>{""}
+              <tbody>
+                {stores.map((store) => (
+                  <tr
+                    key={store.id}
+                    className="border-b border-line last:border-b-0 hover:bg-background/70"
+                  >
+                    {""}
+                    <td className="px-6 py-5">
+                      <div className="font-semibold text-ink">{store.name}</div>
+                      <div className="mt-1 font-mono text-xs text-ink-soft/80">
+                        /{store.slug}
+                      </div>
+                    </td>{""}
+                    <td className="px-6 py-5">
+                      <div className="font-medium text-ink">
+                        {store.owner.name}
+                      </div>
+                      <div className="mt-1 text-xs text-ink-soft">
+                        {store.owner.phone || store.owner.email || "—"}
+                      </div>
+                    </td>{""}
+                    <td className="px-6 py-5">
+                      {store.subscription ? (
+                        <>
+                          <div className="font-medium text-ink">
+                            {store.subscription.plan.name}
+                          </div>
+                          <div className="mt-1 font-mono text-xs text-ink-soft">
+                            {store.subscription.plan.price} ريال
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-sm text-ink-soft/80">
+                          بدون اشتراك
+                        </span>
+                      )}
+                    </td>{""}
+                    <td className="px-6 py-5">
+                      {store.subscription ? (
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${store.subscription.status === "ACTIVE" ? "bg-success-bg text-success" : "bg-danger-bg text-danger"}`}
+                        >
+                          {subscriptionStatus(store.subscription.status)}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>{""}
+                    <td className="px-6 py-5 text-sm text-ink-soft">
+                      {store.subscription
+                        ? formatDate(store.subscription.endsAt)
+                        : "—"}
+                    </td>{""}
+                    <td className="px-6 py-5">
+                      <Badge
+                        tone={store.status === "ACTIVE" ? "success" : "neutral"}
+                        className="px-3 py-1 text-xs font-semibold"
+                      >
+                        {storeStatus(store.status)}
+                      </Badge>
+                    </td>{""}
+                    <td className="px-6 py-5">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onDetails(store)}
+                        className="bg-white text-ink-soft hover:border-gold hover:text-ink"
+                      >
+                        إدارة الحساب
+                      </Button>
+                    </td>{""}
+                  </tr>
+                ))}
+              </tbody>{""}
+            </table>{""}
+          </div>{""}
+          {/* Mobile Cards */}{""}
+          <div className="grid gap-3 p-4 md:hidden">
+            {""}
+            {stores.map((store) => (
+              <article
+                key={store.id}
+                className="rounded-xl border border-line bg-white p-4 shadow-sm"
+              >
+                {""}
+                <div className="flex items-start justify-between gap-3">
+                  {""}
+                  <div className="min-w-0">
+                    {""}
+                    <h3 className="font-semibold text-ink">
+                      {store.name}
+                    </h3>{""}
+                    <p className="mt-0.5 font-mono text-xs text-ink-soft">
+                      /{store.slug}
+                    </p>{""}
+                  </div>{""}
+                  <Badge
+                    tone={store.status === "ACTIVE" ? "success" : "neutral"}
+                    className="shrink-0 px-2.5 py-0.5 text-xs font-semibold"
+                  >
+                    {""}
+                    {storeStatus(store.status)}{""}
+                  </Badge>{""}
+                </div>{""}
+                <div className="mt-3 space-y-2 text-sm">
+                  {""}
+                  <div className="flex justify-between gap-2">
+                    {""}
+                    <span className="text-ink-soft">المالك:</span>{""}
+                    <span className="font-medium text-ink">
+                      {store.owner.name}
+                    </span>{""}
+                  </div>{""}
+                  <div className="flex justify-between gap-2">
+                    {""}
+                    <span className="text-ink-soft">التواصل:</span>{""}
+                    <span className="text-ink">
+                      {store.owner.phone || store.owner.email || "—"}
+                    </span>{""}
+                  </div>{""}
+                  {store.subscription ? (
+                    <>
+                      {""}
+                      <div className="flex justify-between gap-2">
+                        {""}
+                        <span className="text-ink-soft">الباقة:</span>{""}
+                        <span className="font-medium text-ink">
+                          {store.subscription.plan.name}
+                        </span>{""}
+                      </div>{""}
+                      <div className="flex justify-between gap-2">
+                        {""}
+                        <span className="text-ink-soft">السعر:</span>{""}
+                        <span className="font-mono text-ink">
+                          {store.subscription.plan.price} ريال
+                        </span>{""}
+                      </div>{""}
+                      <div className="flex justify-between gap-2">
+                        {""}
+                        <span className="text-ink-soft">الاشتراك:</span>{""}
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${store.subscription.status === "ACTIVE" ? "bg-success-bg text-success" : "bg-danger-bg text-danger"}`}
+                        >
+                          {""}
+                          {subscriptionStatus(store.subscription.status)}{""}
+                        </span>{""}
+                      </div>{""}
+                      <div className="flex justify-between gap-2">
+                        {""}
+                        <span className="text-ink-soft">الانتهاء:</span>{""}
+                        <span className="text-ink">
+                          {formatDate(store.subscription.endsAt)}
+                        </span>{""}
+                      </div>{""}
+                    </>
+                  ) : (
+                    <div className="flex justify-between gap-2">
+                      {""}
+                      <span className="text-ink-soft">الاشتراك:</span>{""}
+                      <span className="text-ink-soft/80">بدون اشتراك</span>{""}
+                    </div>
+                  )}{""}
+                </div>{""}
+                <div className="mt-4">
+                  {""}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onDetails(store)}
+                    className="w-full bg-white text-ink-soft hover:border-gold hover:text-ink"
+                  >
+                    {""}
+                    إدارة الحساب{""}
+                  </Button>{""}
+                </div>{""}
+              </article>
+            ))}{""}
+          </div>{""}
+        </>
+      )}{""}
+    </section>
+  );
+}

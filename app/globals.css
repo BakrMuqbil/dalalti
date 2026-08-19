@@ -81,3 +81,10 @@ body {
 .animate-toast-in {
   animation: toast-in 0.25s ease-out forwards;
 }
+
+
+/*
+ * Storefront Theme Variables
+ * يتم تعيين القيم على حاوية /[storeSlug] فقط،
+ * لذلك لا تؤثر سمة المتجر على لوحة التحكم.
+ */

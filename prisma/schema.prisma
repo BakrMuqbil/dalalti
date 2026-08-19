@@ -55,6 +55,7 @@ model Store {
   products      Product[]
   customers     Customer[]
   orders        Order[]
+  theme         StoreTheme?
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -62,6 +63,23 @@ model Store {
   @@index([ownerId])
   @@index([status])
   @@map("stores")
+}
+
+model StoreTheme {
+  id              String   @id @default(uuid()) @db.Uuid
+  storeId         String   @unique @map("store_id") @db.Uuid
+  primaryColor    String   @default("#7A5C3E") @map("primary_color")
+  secondaryColor  String   @default("#5E4530") @map("secondary_color")
+  accentColor     String   @default("#B8862E") @map("accent_color")
+  backgroundColor String   @default("#FAF7F2") @map("background_color")
+  textColor       String   @default("#2B2420") @map("text_color")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("store_themes")
 }
 
 model Subscription {

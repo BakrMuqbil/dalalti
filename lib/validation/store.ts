@@ -163,3 +163,18 @@ export const updateStoreSchema = z.object({
   phone: z.string().max(20).transform((v) => v.trim() || null).nullable().optional(),
   logoUrl: z.string().url().max(2048).nullable().optional(),
 });
+
+
+/* ── Store Theme ── */
+const hexColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9A-Fa-f]{6}$/, "قيمة اللون يجب أن تكون بصيغة Hex مثل #7A5C3E");
+
+export const updateStoreThemeSchema = z.object({
+  primaryColor: hexColorSchema,
+  secondaryColor: hexColorSchema,
+  accentColor: hexColorSchema,
+  backgroundColor: hexColorSchema,
+  textColor: hexColorSchema,
+});
