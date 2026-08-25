@@ -28,7 +28,7 @@ export default async function CheckoutPage({ params }: Props) {
         phone={store.phone}
       />
       <CheckoutForm storeSlug={store.slug} storeName={store.name} />
-      <StoreFooter storeName={store.name} />
+      <StoreFooter storeName={store.name} storeSlug={storeSlug} phone={store.phone} />
     </>
   );
 }

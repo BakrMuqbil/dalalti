@@ -182,7 +182,7 @@ export default async function ProductDetailPage({ params }: Props) {
             </div>{" "}
           </article>{" "}
         </main>{" "}
-        <StoreFooter storeName={store.name} />{" "}
+        <StoreFooter storeName={store.name} storeSlug={storeSlug} phone={store.phone} />{" "}
       </div>
     </>
   );

@@ -25,45 +25,21 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
   const { category: categoryId, q, sort, availability } = await searchParams;
 
   const store = await prisma.store.findUnique({
-    where: {
-      slug: storeSlug,
-      status: "ACTIVE",
-    },
+    where: { slug: storeSlug, status: "ACTIVE" },
     select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      logoUrl: true,
-      phone: true,
-      status: true,
+      id: true, name: true, slug: true, description: true, logoUrl: true, phone: true, status: true,
       categories: {
-        where: {
-          parentId: null,
-        },
+        where: { parentId: null },
         orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-          imageUrl: true,
-        },
+        select: { id: true, name: true, imageUrl: true },
       },
     },
   });
 
-  if (!store || store.status !== "ACTIVE") {
-    notFound();
-  }
+  if (!store || store.status !== "ACTIVE") notFound();
 
-  // Build product query conditions
-  const whereConditions: Array<Record<string, unknown>> = [
-    { storeId: store.id, status: "ACTIVE" },
-  ];
-
-  if (categoryId) {
-    whereConditions.push({ categoryId });
-  }
-
+  const whereConditions: Array<Record<string, unknown>> = [{ storeId: store.id, status: "ACTIVE" }];
+  if (categoryId) whereConditions.push({ categoryId });
   if (q) {
     whereConditions.push({
       OR: [
@@ -72,22 +48,14 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
       ],
     });
   }
+  if (availability === "available") whereConditions.push({ availability: "AVAILABLE" });
 
-  if (availability === "available") {
-    whereConditions.push({ availability: "AVAILABLE" });
-  }
-
-  // Build orderBy
-  const orderBy: { price?: 'asc' | 'desc'; name?: 'asc'; createdAt?: 'desc' } = (() => {
+  const orderBy: { price?: "asc" | "desc"; name?: "asc"; createdAt?: "desc" } = (() => {
     switch (sort) {
-      case "price-asc":
-        return { price: "asc" as const };
-      case "price-desc":
-        return { price: "desc" as const };
-      case "name":
-        return { name: "asc" as const };
-      default:
-        return { createdAt: "desc" as const };
+      case "price-asc": return { price: "asc" };
+      case "price-desc": return { price: "desc" };
+      case "name": return { name: "asc" };
+      default: return { createdAt: "desc" };
     }
   })();
 
@@ -95,42 +63,17 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
     where: { AND: whereConditions },
     orderBy,
     select: {
-      id: true,
-      name: true,
-      description: true,
-      price: true,
-      availability: true,
-      categoryId: true,
+      id: true, name: true, description: true, price: true, availability: true, categoryId: true,
       images: {
         orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
-        select: {
-          id: true,
-          imageUrl: true,
-          isPrimary: true,
-          sortOrder: true,
-        },
+        select: { id: true, imageUrl: true, isPrimary: true, sortOrder: true },
       },
-      variants: {
-        select: {
-          id: true,
-        },
-      },
-      category: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      variants: { select: { id: true } },
+      category: { select: { id: true, name: true } },
     },
   });
 
-  const categories = store.categories.map((c: { id: string; name: string; imageUrl: string | null }) => ({
-    id: c.id,
-    name: c.name,
-    imageUrl: c.imageUrl,
-  }));
-
-  const productList = products.map((p: typeof products[0]) => ({
+  const productList = products.map((p) => ({
     id: p.id,
     name: p.name,
     description: p.description,
@@ -141,30 +84,58 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
     category: p.category,
   }));
 
+  const categories = store.categories.map((c) => ({ id: c.id, name: c.name, imageUrl: c.imageUrl }));
+  const heroProduct = productList[0];
+  const hasDiscoveryFilters = Boolean(categoryId || q || availability);
+  const showLatest = !hasDiscoveryFilters && productList.length >= 8;
+  const latestProducts = showLatest ? productList.slice(0, 4) : [];
+  const discoveryProducts = showLatest ? productList.slice(4) : productList;
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <StoreHeader
+      <StoreHeader storeName={store.name} storeSlug={store.slug} logoUrl={store.logoUrl} phone={store.phone} />
+
+      <StoreHero
         storeName={store.name}
+        description={store.description}
         storeSlug={store.slug}
-        logoUrl={store.logoUrl}
-        phone={store.phone}
+        productCount={productList.length}
+        categoryCount={categories.length}
+        featuredProduct={heroProduct ? {
+          id: heroProduct.id,
+          name: heroProduct.name,
+          price: heroProduct.price,
+          imageUrl: heroProduct.images[0]?.imageUrl ?? null,
+        } : null}
       />
-      <StoreHero storeName={store.name} description={store.description} />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <CategoryFilter
-          categories={categories}
-          activeCategory={categoryId || null}
-          storeSlug={store.slug}
-        />
+
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
+        <CategoryFilter categories={categories} activeCategory={categoryId || null} storeSlug={store.slug} />
+
+        {showLatest && (
+          <section className="mb-14" aria-labelledby="latest-heading">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold tracking-wider text-gold">اختيار سريع</p>
+                <h2 id="latest-heading" className="mt-1 font-display text-2xl font-bold text-ink sm:text-3xl">وصل حديثًا</h2>
+              </div>
+              <a href="#products" className="text-sm font-semibold text-brand hover:text-brand-deep">استكشف الكل</a>
+            </div>
+            <ProductGrid products={latestProducts} storeSlug={store.slug} />
+          </section>
+        )}
+
         <ProductFilterBar
           storeSlug={store.slug}
           initialQuery={q || ""}
           initialSort={sort || "newest"}
           initialAvailability={availability || "all"}
+          productCount={discoveryProducts.length}
         />
-        <ProductGrid products={productList} storeSlug={store.slug} />
+        <ProductGrid products={discoveryProducts} storeSlug={store.slug} />
       </main>
-      <StoreFooter storeName={store.name} />
+
+      <StoreFooter storeName={store.name} storeSlug={store.slug} phone={store.phone} />
     </div>
   );
 }

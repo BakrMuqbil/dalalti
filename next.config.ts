@@ -1,1 +1,47 @@
-import type { NextConfig } from 'next' ; const nextConfig: NextConfig = { /* * نستثني sharp من عملية bundling الخاصة بـ Webpack. * sharp مكتبة تحتوي على binaries/WASM حقيقية، ومحاولة * تضمينها (bundle) داخل Webpack بتكسر بنيتها الداخلية * وترجع undefined بدل الـ module الحقيقي وقت التشغيل * (الخطأ: 'Cannot read properties of undefined (reading `output`)'). * هذا الإعداد بيخلي Next.js يحمّلها مباشرة من node_modules * وقت التشغيل بدل عمل bundle ليها. */ serverExternalPackages: ['sharp'], /* ============================================================ Images — Vercel Blob Storage ============================================================ */ images: { remotePatterns: [ { protocol: 'https', hostname: 'gzzz6oueflh61jmf.public.blob.vercel-storage.com', pathname: '/**' }, ], }, /* ============================================================ Security Headers ============================================================ */ async headers() { return [ { source: '/:path*', headers: [ { key: 'X-Frame-Options', value: 'DENY' }, { key: 'X-Content-Type-Options', value: 'nosniff' }, { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' }, { key: 'X-DNS-Prefetch-Control', value: 'on' }, { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }, { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' }, ], }, ] ; }, /* ============================================================ Performance Budgets ============================================================ */ experimental: { /* Next.js 15+ uses `dynamicIO` or we can use `staleTimes` */ }, } ; export default nextConfig ;
+import type { NextConfig } from "next";
+const nextConfig: NextConfig = {
+  /* * نستثني sharp من عملية bundling الخاصة بـ Webpack. * sharp مكتبة تحتوي على binaries/WASM حقيقية، ومحاولة * تضمينها (bundle) داخل Webpack بتكسر بنيتها الداخلية * وترجع undefined بدل الـ module الحقيقي وقت التشغيل * (الخطأ: 'Cannot read properties of undefined (reading `output`)'). * هذا الإعداد بيخلي Next.js يحمّلها مباشرة من node_modules * وقت التشغيل بدل عمل bundle ليها. */ serverExternalPackages:
+    ["sharp"] /* ============================================================
+   Images — Vercel Blob Storage + Demo Images
+   ============================================================ */,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "gzzz6oueflh61jmf.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+    ],
+  },
+  /*============================================================ Security Headers ============================================================ */ async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+    ];
+  },
+  /* ============================================================ Performance Budgets ============================================================ */ experimental:
+    {
+      /* Next.js 15+ uses `dynamicIO` or we can use `staleTimes` */
+    },
+};
+export default nextConfig;

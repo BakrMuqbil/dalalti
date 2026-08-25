@@ -30,7 +30,7 @@ export default async function OrdersPage({ params }: Props) {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
         <OrdersList storeSlug={store.slug} storeName={store.name} />
       </main>
-      <StoreFooter storeName={store.name} />
+      <StoreFooter storeName={store.name} storeSlug={storeSlug} phone={store.phone} />
     </div>
   );
 }
