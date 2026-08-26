@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import { validateUploadedImage } from "@/lib/upload-security";
+import { optimizeImage } from "@/lib/image-processing";
 
 type RouteContext = {
   params: Promise<{
@@ -13,6 +14,7 @@ type RouteContext = {
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const MAX_DIMENSIONS: [number, number] = [8000, 8000];
 
 const ALLOWED_TYPES = [
@@ -32,8 +34,15 @@ export async function POST(
   const auth = await requireStoreOwner();
 
   const reqHeaders = await headers();
-  const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.upload);
-  if (rateLimitResponse) return rateLimitResponse;
+
+  const rateLimitResponse = applyRateLimit(
+    reqHeaders,
+    rateLimitPresets.upload,
+  );
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   if (!auth) {
     return NextResponse.json(
@@ -58,38 +67,70 @@ export async function POST(
       );
     }
 
+    // ---------------------------------------------------------
+    // 1. التحقق من المتجر
+    // ---------------------------------------------------------
+
     const store = await prisma.store.findUnique({
-      where: { ownerId: auth.userId },
-      select: { id: true, status: true },
+      where: {
+        ownerId: auth.userId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
     });
 
     if (!store) {
       return NextResponse.json(
-        { success: false, message: "لا يوجد متجر مرتبط بهذا الحساب" },
+        {
+          success: false,
+          message: "لا يوجد متجر مرتبط بهذا الحساب",
+        },
         { status: 404 },
       );
     }
 
     if (store.status !== "ACTIVE") {
       return NextResponse.json(
-        { success: false, message: "المتجر غير نشط" },
+        {
+          success: false,
+          message: "المتجر غير نشط",
+        },
         { status: 403 },
       );
     }
 
+    // ---------------------------------------------------------
+    // 2. التحقق من المنتج
+    // ---------------------------------------------------------
+
     const product = await prisma.product.findFirst({
-      where: { id: productId, storeId: store.id },
-      select: { id: true },
+      where: {
+        id: productId,
+        storeId: store.id,
+      },
+      select: {
+        id: true,
+      },
     });
 
     if (!product) {
       return NextResponse.json(
-        { success: false, message: "المنتج غير موجود في متجرك" },
+        {
+          success: false,
+          message: "المنتج غير موجود في متجرك",
+        },
         { status: 404 },
       );
     }
 
+    // ---------------------------------------------------------
+    // 3. قراءة الملف
+    // ---------------------------------------------------------
+
     const formData = await request.formData();
+
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
@@ -101,6 +142,10 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    // ---------------------------------------------------------
+    // 4. Validation
+    // ---------------------------------------------------------
 
     const validation = await validateUploadedImage(file, {
       maxFileSize: MAX_FILE_SIZE,
@@ -118,30 +163,73 @@ export async function POST(
       );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    // ---------------------------------------------------------
+    // 5. قراءة الصورة إلى Buffer
+    // ---------------------------------------------------------
 
-    const fileName = `products/${productId}/${crypto.randomUUID()}.${validation.extension}`;
+    const arrayBuffer = await file.arrayBuffer();
+
+    const originalBuffer = Buffer.from(arrayBuffer);
+
+    // ---------------------------------------------------------
+    // 6. Image Performance Layer
+    // ---------------------------------------------------------
+
+    const optimized = await optimizeImage(originalBuffer);
+
+    // ---------------------------------------------------------
+    // 7. اسم الملف النهائي
+    // ---------------------------------------------------------
+
+    const fileName = `products/${productId}/${crypto.randomUUID()}.webp`;
+
+    // ---------------------------------------------------------
+    // 8. رفع الصورة المحسنة فقط إلى Vercel Blob
+    // ---------------------------------------------------------
 
     const blob = await put(
       fileName,
-      buffer,
+      optimized.buffer,
       {
         access: "public",
-        contentType: validation.mimeType!,
+        contentType: optimized.contentType,
         addRandomSuffix: false,
       },
     );
 
+    // ---------------------------------------------------------
+    // 9. إرجاع بيانات مفيدة للواجهة
+    // ---------------------------------------------------------
+
     return NextResponse.json({
       success: true,
-      message: "تم رفع الصورة بنجاح",
+      message: "تم رفع الصورة وتحسينها بنجاح",
+
       imageUrl: blob.url,
-      originalSize: file.size,
-      optimizedSize: buffer.length,
-      contentType: validation.mimeType,
-      width: validation.width,
-      height: validation.height,
+
+      originalSize: optimized.originalSize,
+      optimizedSize: optimized.optimizedSize,
+
+      originalMimeType: validation.mimeType,
+      contentType: optimized.contentType,
+
+      originalWidth: validation.width,
+      originalHeight: validation.height,
+
+      width: optimized.width,
+      height: optimized.height,
+
+      compressionRatio:
+        optimized.originalSize > 0
+          ? Number(
+              (
+                (1 -
+                  optimized.optimizedSize /
+                    optimized.originalSize) *
+                100
+              ).toFixed(1),
+            )
+          : 0,
     });
   } catch (error) {
     console.error(

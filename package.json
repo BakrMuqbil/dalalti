@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@img/sharp-wasm32": "^0.35.3",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@vercel/blob": "^2.6.1",
