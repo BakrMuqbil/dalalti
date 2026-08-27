@@ -8,35 +8,13 @@ const playToastSound = (type: ToastType) => {
     if (type === "success") {
       // 🎵 تشغيل ملف الصوت الأصلي المطابق للفيديو
       const audio = new Audio("/sounds/success.m4a");
-      audio.volume = 0.6;
+      audio.volume = 0.9;
       audio.play().catch(() => {});
     } else if (type === "error") {
-      // ⚠️ نغمة الرفض/الفشل (Double Low Tone)
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      if (!AudioContextClass) return;
-
-      const ctx = new AudioContextClass();
-      if (ctx.state === "suspended") ctx.resume();
-
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.setValueAtTime(210, now + 0.12);
-
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.35);
+      // ⚠️ تشغيل ملف صوت الخطأ المباشر بمستوى صوت 0.9
+      const audio = new Audio("/sounds/error.m4a");
+      audio.volume = 0.9;
+      audio.play().catch(() => {});
     } else if (type === "warning") {
       // 🟡 نغمة التحذير (Soft Double Pop)
       const AudioContextClass =
