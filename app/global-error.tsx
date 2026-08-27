@@ -15,27 +15,27 @@ export default function GlobalError({
   }, [error]);
   return (
     <html dir="rtl">
-      {" "}
+      {""}
       <body className="flex min-h-screen items-center justify-center bg-background px-4">
-        {" "}
+        {""}
         <div className="w-full max-w-md">
-          {" "}
+          {""}
           <EmptyState
             icon={<AlertTriangleIcon className="h-12 w-12 text-danger" />}
             title="حدث خطأ غير متوقع"
             description="نعتذر عن هذا الخطأ. يمكنك المحاولة مرة أخرى أو العودة للصفحة الرئيسية."
           >
-            {" "}
+            {""}
             <div className="flex flex-col gap-3 sm:flex-row">
-              {" "}
+              {""}
               <Button onClick={reset} variant="primary">
-                {" "}
-                إعادة المحاولة{" "}
-              </Button>{" "}
-            </div>{" "}
-          </EmptyState>{" "}
-        </div>{" "}
-      </body>{" "}
+                {""}
+                إعادة المحاولة{""}
+              </Button>{""}
+            </div>{""}
+          </EmptyState>{""}
+        </div>{""}
+      </body>{""}
     </html>
   );
 }

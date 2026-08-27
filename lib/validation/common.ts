@@ -4,7 +4,24 @@ import { z } from "zod";
  * مخططات مشتركة تُستخدم عبر جميع واجهات API.
  */
 
-export const cuidSchema = z.string().cuid({ message: "معرف غير صالح" });
+/**
+ * CUID
+ *
+ * يُستخدم فقط في الأجزاء التي ما زالت تعتمد على CUID.
+ * لا تستخدمه لمعرفات Prisma التي معرفة بـ @db.Uuid.
+ */
+export const cuidSchema = z.string().cuid({
+  message: "معرف غير صالح",
+});
+
+/**
+ * UUID
+ *
+ * معرفات قاعدة البيانات الحالية في Prisma تستخدم UUID.
+ */
+export const idSchema = z.string().uuid({
+  message: "معرف غير صالح",
+});
 
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -29,7 +46,10 @@ export const slugSchema = z
   .string()
   .min(1, "الرابط مطلوب")
   .max(100, "الرابط طويل جداً")
-  .regex(/^[a-z0-9-]+$/, "الرابط يجب أن يحتوي على أحرف إنجليزية وأرقام وشرطات فقط");
+  .regex(
+    /^[a-z0-9-]+$/,
+    "الرابط يجب أن يحتوي على أحرف إنجليزية وأرقام وشرطات فقط",
+  );
 
 export const nameSchema = z
   .string()

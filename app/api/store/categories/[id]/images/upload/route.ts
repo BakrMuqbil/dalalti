@@ -5,10 +5,13 @@ import { requireStoreOwner } from "@/lib/require-auth";
 import { headers } from "next/headers";
 import { applyRateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import { validateUploadedImage } from "@/lib/upload-security";
+import { optimizeImage } from "@/lib/image-processing";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const MAX_DIMENSIONS: [number, number] = [4000, 4000];
+// نسمح بالصور الكبيرة مبدئيًا ثم يقوم sharp
+// بتصغيرها إلى 1600x1600 قبل التخزين.
+const MAX_DIMENSIONS: [number, number] = [8000, 8000];
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -24,15 +27,17 @@ type RouteContext = {
   }>;
 };
 
-export async function POST(
-  request: Request,
-  context: RouteContext,
-) {
+export const runtime = "nodejs";
+
+export async function POST(request: Request, context: RouteContext) {
   const auth = await requireStoreOwner();
 
   const reqHeaders = await headers();
   const rateLimitResponse = applyRateLimit(reqHeaders, rateLimitPresets.upload);
-  if (rateLimitResponse) return rateLimitResponse;
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   if (!auth) {
     return NextResponse.json(
@@ -57,6 +62,7 @@ export async function POST(
       );
     }
 
+    // الحصول على المتجر الخاص بالمستخدم
     const store = await prisma.store.findUnique({
       where: {
         ownerId: auth.userId,
@@ -87,6 +93,7 @@ export async function POST(
       );
     }
 
+    // التأكد أن الفئة تنتمي إلى متجر المستخدم
     const category = await prisma.category.findFirst({
       where: {
         id: categoryId,
@@ -108,6 +115,7 @@ export async function POST(
       );
     }
 
+    // قراءة الملف
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -121,6 +129,17 @@ export async function POST(
       );
     }
 
+    // ---------------------------------------------------------
+    // 1. التحقق الأمني من الصورة
+    // ---------------------------------------------------------
+    //
+    // validateUploadedImage يتحقق من:
+    // - حجم الملف
+    // - Magic Bytes
+    // - MIME الحقيقي
+    // - نوع الملف المسموح
+    // - أبعاد الصورة
+    //
     const validation = await validateUploadedImage(file, {
       maxFileSize: MAX_FILE_SIZE,
       maxDimensions: MAX_DIMENSIONS,
@@ -137,46 +156,92 @@ export async function POST(
       );
     }
 
+    // ---------------------------------------------------------
+    // 2. قراءة الصورة إلى Buffer
+    // ---------------------------------------------------------
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const fileName = `stores/${store.id}/categories/${category.id}/${crypto.randomUUID()}.${validation.extension}`;
+    // ---------------------------------------------------------
+    // 3. تحسين الصورة باستخدام Sharp
+    // ---------------------------------------------------------
+    //
+    // يتم هنا:
+    // - تدوير الصورة حسب EXIF
+    // - تصغيرها إلى 1600x1600 كحد أقصى
+    // - الحفاظ على نسبة الأبعاد
+    // - منع تكبير الصور الصغيرة
+    // - تحويلها إلى WebP
+    // - ضغطها بجودة 82
+    // - إزالة metadata غير الضرورية
+    //
+    const optimized = await optimizeImage(buffer);
 
-    const blob = await put(fileName, buffer, {
+    // ---------------------------------------------------------
+    // 4. رفع النسخة المحسنة فقط إلى Vercel Blob
+    // ---------------------------------------------------------
+    const fileName = `stores/${store.id}/categories/${category.id}/${crypto.randomUUID()}.${optimized.extension}`;
+
+    const blob = await put(fileName, optimized.buffer, {
       access: "public",
-      contentType: validation.mimeType!,
+      contentType: optimized.contentType,
       addRandomSuffix: false,
     });
 
+    // حفظ رابط الصورة القديمة قبل تحديث قاعدة البيانات
     const oldImageUrl = category.imageUrl;
 
+    // ---------------------------------------------------------
+    // 5. تحديث رابط الصورة في قاعدة البيانات
+    // ---------------------------------------------------------
     await prisma.category.update({
-      where: { id: category.id },
-      data: { imageUrl: blob.url },
+      where: {
+        id: category.id,
+      },
+      data: {
+        imageUrl: blob.url,
+      },
     });
 
-    /*
-     * حذف الصورة القديمة من Vercel Blob بعد نجاح رفع الصورة الجديدة
-     * وتحديث الرابط في قاعدة البيانات.
-     * نتجاهل الأخطاء هنا حتى لا نفقد الصورة الجديدة
-     * إذا كانت الصورة القديمة غير موجودة أو لم يعد لدينا صلاحية حذفها.
-     */
+    // ---------------------------------------------------------
+    // 6. حذف الصورة القديمة بعد نجاح الصورة الجديدة
+    // ---------------------------------------------------------
+    //
+    // فشل حذف الصورة القديمة لا يجب أن يؤدي إلى فشل العملية
+    // لأن الصورة الجديدة أصبحت محفوظة بالفعل.
+    //
     if (oldImageUrl) {
       try {
         await del(oldImageUrl);
       } catch (cleanupError) {
-        console.error(
-          "Failed to delete old category image:",
-          cleanupError,
-        );
+        console.error("Failed to delete old category image:", cleanupError);
       }
     }
 
+    // ---------------------------------------------------------
+    // 7. الاستجابة
+    // ---------------------------------------------------------
     return NextResponse.json({
       success: true,
       message: "تم رفع صورة الفئة بنجاح",
+
       imageUrl: blob.url,
-      originalSize: file.size,
+
+      // حجم الصورة الأصلية
+      originalSize: optimized.originalSize,
+
+      // حجم الصورة بعد التحسين
+      optimizedSize: optimized.optimizedSize,
+
+      // النوع النهائي
+      contentType: optimized.contentType,
+
+      // الامتداد النهائي
+      extension: optimized.extension,
+
+      // الأبعاد النهائية بعد التحسين
+      width: optimized.width,
+      height: optimized.height,
     });
   } catch (error) {
     console.error("Upload category image error:", error);
@@ -184,7 +249,10 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        message: "حدث خطأ أثناء رفع صورة الفئة",
+        message:
+          error instanceof Error
+            ? error.message
+            : "حدث خطأ أثناء رفع صورة الفئة",
       },
       { status: 500 },
     );

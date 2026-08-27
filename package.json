@@ -15,6 +15,7 @@
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.7",
     "next": "16.2.12",
+    "node-addon-api": "^8.9.2",
     "pg": "^8.23.0",
     "prisma": "^7.9.1",
     "react": "19.2.4",
@@ -30,8 +31,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
+    "node-gyp": "^13.0.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true
   }
 }
