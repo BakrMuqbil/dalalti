@@ -81,3 +81,26 @@ body {
 .animate-toast-in {
   animation: toast-in 0.25s ease-out forwards;
 }
+<<<<<<< Updated upstream
+=======
+
+/* Toast progress bar animation */
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-toast-progress {
+  animation: toast-progress 4000ms linear forwards;
+}
+
+/*
+ * Storefront Theme Variables
+ * يتم تعيين القيم على حاوية /[storeSlug] فقط،
+ * لذلك لا تؤثر سمة المتجر على لوحة التحكم.
+ */
+>>>>>>> Stashed changes
